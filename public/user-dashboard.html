@@ -203,7 +203,7 @@
       grid.innerHTML = list.map(p => `
         <article class="property-card">
           <div class="card-img-wrap">
-            <img src="${p.image}" class="card-img" alt="${escapeHtml(p.title)}">
+            <img src="${formatImageUrl(p.image)}" class="card-img" alt="${escapeHtml(p.title)}">
             <span class="badge badge-verified card-badge">${escapeHtml(p.badge || "Verified")}</span>
             <button class="card-fav-btn active" onclick="removeFav('${p.id}')" title="Remove from Favourites">♥</button>
             <div class="card-type-tag">${typeLabel(p.type)}</div>

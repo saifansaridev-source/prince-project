@@ -150,7 +150,7 @@
         document.title = `${p.title} | Ghar Bazaar`;
 
         document.getElementById("propTitle").textContent = p.title;
-        document.getElementById("propImage").src = p.image;
+        document.getElementById("propImage").src = formatImageUrl(p.image);
         document.getElementById("propBadge").textContent = p.badge || "Verified";
         document.getElementById("propType").textContent = typeLabel(p.type);
         document.getElementById("propPrice").textContent = money(p.price);

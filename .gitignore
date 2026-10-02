@@ -1,3 +1,8 @@
 node_modules/
 .env
+.env.*
+.env.local
+public/uploads/
+.vercel/
 data/
+npm-debug.log*

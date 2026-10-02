@@ -11,16 +11,36 @@ async function api(url, options = {}) {
     headers["Content-Type"] = "application/json";
   }
 
-  const response = await fetch(url, { ...options, headers });
-  const data = await response.json().catch(() => ({}));
+  try {
+    const response = await fetch(url, {
+      credentials: "same-origin",
+      ...options,
+      headers
+    });
 
-  if (!response.ok) {
-    const error = new Error(data.message || `Request failed with status ${response.status}`);
-    Object.assign(error, data);
-    throw error;
+    let data;
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      data = await response.json().catch(() => ({}));
+    } else {
+      const text = await response.text();
+      data = { message: text || `HTTP error ${response.status}` };
+    }
+
+    if (!response.ok) {
+      const errorMsg = data.message || (response.status === 413 ? "File too large. Max limit is 4MB." : `Request failed with status ${response.status}`);
+      const error = new Error(errorMsg);
+      Object.assign(error, data);
+      throw error;
+    }
+
+    return data;
+  } catch (err) {
+    if (!navigator.onLine) {
+      throw new Error("You are currently offline. Please check your internet connection.");
+    }
+    throw err;
   }
-
-  return data;
 }
 
 // Global Toast System
@@ -61,6 +81,59 @@ function escapeHtml(str) {
     '"': "&quot;",
     "'": "&#039;"
   }[c]));
+}
+
+// Image URL Formatter with Cloudinary f_auto,q_auto transformations
+function formatImageUrl(url) {
+  if (!url) return "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800";
+  if (typeof url !== "string") return "";
+  if (url.includes("res.cloudinary.com") && url.includes("/upload/") && !url.includes("f_auto,q_auto")) {
+    return url.replace("/upload/", "/upload/f_auto,q_auto/");
+  }
+  return url;
+}
+
+// Client-side image compressor using HTML5 canvas to guarantee file stays well below Vercel's 4.5MB limit
+async function compressImageIfNeeded(file, maxSizeBytes = 3.5 * 1024 * 1024, maxWidth = 1920) {
+  if (!file || !file.type.startsWith("image/")) return file;
+  if (file.size <= maxSizeBytes) return file;
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob((blob) => {
+          if (blob && blob.size < file.size) {
+            const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, ".webp"), {
+              type: "image/webp",
+              lastModified: Date.now()
+            });
+            resolve(compressedFile);
+          } else {
+            resolve(file);
+          }
+        }, "image/webp", 0.82);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 // Property Type Label Helper

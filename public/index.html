@@ -487,7 +487,7 @@
         return `
           <article class="property-card" data-id="${p.id}">
             <div class="card-img-wrap">
-              <img src="${p.image}" class="card-img" alt="${escapeHtml(p.title)}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800'">
+              <img src="${formatImageUrl(p.image)}" class="card-img" alt="${escapeHtml(p.title)}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800'">
               <span class="badge ${badgeClass} card-badge">${escapeHtml(p.badge || "Verified")}</span>
               <button class="card-fav-btn ${fav ? "active" : ""}" data-id="${p.id}" onclick="event.stopPropagation(); toggleFavorite('${p.id}')" title="Save to Favourites">
                 ${fav ? "♥" : "♡"}
@@ -573,7 +573,7 @@
 
       currentSelectedProperty = p;
       document.getElementById("modalTitle").textContent = p.title;
-      document.getElementById("modalImage").src = p.image;
+      document.getElementById("modalImage").src = formatImageUrl(p.image);
       document.getElementById("modalBadge").textContent = p.badge || "Verified";
       document.getElementById("modalType").textContent = typeLabel(p.type);
       document.getElementById("modalPrice").textContent = money(p.price);

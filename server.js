@@ -1,89 +1,37 @@
 require("dotenv").config();
 const express = require("express");
 const session = require("express-session");
+const { MongoStore } = require("connect-mongo");
 const path = require("path");
 const crypto = require("crypto");
-const fs = require("fs");
 const mongoose = require("mongoose");
 const nodemailer = require("nodemailer");
 const multer = require("multer");
-const cloudinary = require("cloudinary").v2;
+
+const connectDB = require("./config/db");
+const { cloudinary, uploadToCloudinary } = require("./config/cloudinary");
 const { demoBrokers, demoUsers, demoProperties } = require("./seed-rooms");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const APP_URL = process.env.APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://localhost:${PORT}`);
 const PUBLIC = path.join(__dirname, "public");
-const UPLOADS_DIR = path.join(PUBLIC, "uploads");
 
-// Ensure local uploads directory exists as fallback
-if (!fs.existsSync(UPLOADS_DIR)) {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-}
+// Trust proxy for Vercel / reverse proxy secure cookie handling
+app.set("trust proxy", 1);
 
-// Cloudinary Configuration
-const hasCloudinary = Boolean(
-  process.env.CLOUDINARY_CLOUD_NAME &&
-  process.env.CLOUDINARY_API_KEY &&
-  process.env.CLOUDINARY_API_SECRET
-);
-
-if (hasCloudinary) {
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-    secure: true
-  });
-  console.log("☁️  Cloudinary integration configured");
-} else {
-  console.log("ℹ️  Cloudinary not configured in .env — using local upload / image URL fallback");
-}
-
-// Multer Storage Setup (memory storage for seamless Cloudinary upload or local write)
+// Multer Storage Setup: Memory storage only (No filesystem writes in serverless)
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB limit
+  limits: { fileSize: 4 * 1024 * 1024 }, // 4MB per file (keeps within Vercel 4.5MB request limit)
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) {
+    if (file.mimetype.match(/^image\/(jpeg|jpg|png|webp)$/i)) {
       cb(null, true);
     } else {
       cb(new Error("Only image files (JPG, PNG, WEBP) are allowed."));
     }
   }
 });
-
-// Helper: Upload file buffer to Cloudinary or local fallback
-async function uploadImageFile(buffer, originalname) {
-  if (hasCloudinary) {
-    return new Promise((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        {
-          folder: "gharbazaar_properties",
-          resource_type: "image",
-          transformation: [{ quality: "auto" }, { fetch_format: "auto" }]
-        },
-        (error, result) => {
-          if (error) return reject(error);
-          resolve({
-            url: result.secure_url,
-            public_id: result.public_id
-          });
-        }
-      );
-      stream.end(buffer);
-    });
-  } else {
-    // Local storage fallback
-    const ext = path.extname(originalname) || ".jpg";
-    const filename = `prop_${Date.now()}_${crypto.randomBytes(4).toString("hex")}${ext}`;
-    const targetPath = path.join(UPLOADS_DIR, filename);
-    fs.writeFileSync(targetPath, buffer);
-    return {
-      url: `/uploads/${filename}`,
-      public_id: `local_${filename}`
-    };
-  }
-}
 
 // MongoDB Schemas
 const userSchema = new mongoose.Schema({
@@ -120,7 +68,11 @@ const propertySchema = new mongoose.Schema({
   size: { type: String, default: "200 sq.ft" },
   amenities: { type: [String], default: [] },
   image: { type: String, required: true },
-  images: [{ url: String, public_id: String }],
+  images: [{
+    url: String,
+    publicId: String,
+    public_id: String
+  }],
   description: { type: String, default: "" },
   availability: { type: String, enum: ["available", "booked", "unavailable"], default: "available" },
   featured: { type: Boolean, default: false }
@@ -153,7 +105,7 @@ const bookingSchema = new mongoose.Schema({
 
 const notificationSchema = new mongoose.Schema({
   id: { type: String, unique: true },
-  recipientId: { type: String, required: true }, // broker ID or user ID
+  recipientId: { type: String, required: true },
   recipientRole: { type: String, enum: ["broker", "user"], default: "broker" },
   type: { type: String, default: "booking_request" },
   message: { type: String, required: true },
@@ -163,25 +115,55 @@ const notificationSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-const User = mongoose.model("User", userSchema);
-const Property = mongoose.model("Property", propertySchema);
-const Booking = mongoose.model("Booking", bookingSchema);
-const Notification = mongoose.model("Notification", notificationSchema);
+const User = mongoose.models.User || mongoose.model("User", userSchema);
+const Property = mongoose.models.Property || mongoose.model("Property", propertySchema);
+const Booking = mongoose.models.Booking || mongoose.model("Booking", bookingSchema);
+const Notification = mongoose.models.Notification || mongoose.model("Notification", notificationSchema);
 
-// Express Middleware
-app.use(express.json({ limit: "5mb" }));
-app.use(express.urlencoded({ extended: true, limit: "5mb" }));
-app.use(session({
+// Body Parsers (Vercel payload limit is 4.5MB, set 4MB)
+app.use(express.json({ limit: "4mb" }));
+app.use(express.urlencoded({ extended: true, limit: "4mb" }));
+
+// Session Configuration using MongoStore for Serverless persistence
+const sessionConfig = {
   secret: process.env.SESSION_SECRET || "Ghar-Bazaar-college-project-secure-session-key",
   resave: false,
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
     sameSite: "lax",
-    secure: false, // set to true in production HTTPS
-    maxAge: 1000 * 60 * 60 * 24 // 24 hours
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
   }
-}));
+};
+
+if (process.env.MONGODB_URI) {
+  sessionConfig.store = MongoStore.create({
+    mongoUrl: process.env.MONGODB_URI,
+    collectionName: "sessions",
+    ttl: 7 * 24 * 60 * 60
+  });
+}
+app.use(session(sessionConfig));
+
+// Database Connection Middleware (ensures cached DB connection before every request)
+let isSeeded = false;
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    if (!isSeeded) {
+      await seedDefaultData();
+      isSeeded = true;
+    }
+    next();
+  } catch (e) {
+    console.error("DB connection error:", e.message);
+    if (req.path.startsWith("/api/")) {
+      return res.status(503).json({ success: false, message: "Database unavailable" });
+    }
+    return res.status(503).send("Database unavailable. Please try again shortly.");
+  }
+});
 
 // Password Hashing Helpers
 function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
@@ -253,29 +235,48 @@ function requireBrokerOrAdmin(req, res, next) {
   next();
 }
 
-// Mailer Setup
-const mailer = (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS)
-  ? nodemailer.createTransport({
+// Mailer Setup (supports EMAIL_USER / EMAIL_PASS or full SMTP settings)
+const emailUser = process.env.EMAIL_USER || process.env.SMTP_USER;
+const emailPass = process.env.EMAIL_PASS || process.env.SMTP_PASS;
+
+let mailer = null;
+if (emailUser && emailPass) {
+  if (process.env.SMTP_HOST) {
+    mailer = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT || 587),
       secure: String(process.env.SMTP_SECURE || "false") === "true",
       auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
+        user: emailUser,
+        pass: emailPass
       }
-    })
-  : null;
+    });
+  } else {
+    // Default to Gmail service if SMTP_HOST is omitted
+    mailer = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: emailUser,
+        pass: emailPass
+      }
+    });
+  }
+}
 
 async function sendVerificationEmail(email, name, otp) {
+  const verifyLink = `${APP_URL}/verify-email.html?email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp)}`;
+
   if (!mailer) {
     console.log(`\n=========================================`);
     console.log(`📧 [EMAIL AUTH DEMO] Verification code for ${email}: [ ${otp} ]`);
+    console.log(`🔗 Verification Link: ${verifyLink}`);
     console.log(`=========================================\n`);
     return false;
   }
+
   try {
     await mailer.sendMail({
-      from: process.env.MAIL_FROM || process.env.SMTP_USER,
+      from: process.env.MAIL_FROM || emailUser,
       to: email,
       subject: "Ghar Bazaar - Verify your email",
       html: `
@@ -289,6 +290,9 @@ async function sendVerificationEmail(email, name, otp) {
           <div style="font-size:32px;font-weight:700;letter-spacing:6px;padding:16px;background:#f0fdf4;color:#166534;border:1px dashed #86efac;border-radius:8px;text-align:center;margin:16px 0">
             ${otp}
           </div>
+          <div style="text-align:center;margin:24px 0">
+            <a href="${verifyLink}" style="background:#0f5132;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:600;display:inline-block">Verify Email Directly</a>
+          </div>
           <p style="color:#64748b;font-size:13px">This OTP code expires in 10 minutes. If you did not request this, please ignore this email.</p>
         </div>
       `
@@ -300,129 +304,136 @@ async function sendVerificationEmail(email, name, otp) {
   }
 }
 
-// Database Initialization & Seeding
-async function initDatabase() {
-  if (!process.env.MONGODB_URI) {
-    throw new Error("MONGODB_URI is missing. Please check .env file.");
-  }
-  await mongoose.connect(process.env.MONGODB_URI);
-  console.log("✅ MongoDB connected successfully");
-
-  // 1. Seed Admin
-  const adminEmail = "admin@gharbazaar.com";
-  if (!(await User.exists({ email: adminEmail }))) {
-    const p = hashPassword("Admin@123");
-    await User.create({
-      id: "U001",
-      name: "Administrator",
-      email: adminEmail,
-      password: p,
-      role: "admin",
-      phone: "+91 98765 00000",
-      emailVerified: true
-    });
-    console.log("✅ Default Admin created (admin@gharbazaar.com / Admin@123)");
-  }
-
-  // 2. Seed Demo Brokers
-  for (const b of demoBrokers) {
-    if (!(await User.exists({ email: b.email }))) {
-      const p = hashPassword("Broker@123");
+// Database Seeding Helper
+async function seedDefaultData() {
+  try {
+    // 1. Seed Admin
+    const adminEmail = "admin@gharbazaar.com";
+    if (!(await User.exists({ email: adminEmail }))) {
+      const p = hashPassword("Admin@123");
       await User.create({
-        id: b.id,
-        name: b.name,
-        email: b.email,
+        id: "U001",
+        name: "Administrator",
+        email: adminEmail,
         password: p,
-        role: "broker",
-        phone: b.phone,
-        agencyName: b.agencyName,
+        role: "admin",
+        phone: "+91 98765 00000",
         emailVerified: true
       });
-      console.log(`✅ Demo Broker created: ${b.name} (${b.email} / Broker@123)`);
+      console.log("✅ Default Admin verified (admin@gharbazaar.com / Admin@123)");
     }
-  }
 
-  // 3. Seed Demo Renter
-  for (const u of demoUsers) {
-    if (!(await User.exists({ email: u.email }))) {
-      const p = hashPassword("User@123");
-      await User.create({
-        id: u.id,
-        name: u.name,
-        email: u.email,
-        password: p,
-        role: "user",
-        phone: u.phone,
-        emailVerified: true
+    // 2. Seed Demo Brokers
+    for (const b of demoBrokers) {
+      if (!(await User.exists({ email: b.email }))) {
+        const p = hashPassword("Broker@123");
+        await User.create({
+          id: b.id,
+          name: b.name,
+          email: b.email,
+          password: p,
+          role: "broker",
+          phone: b.phone,
+          agencyName: b.agencyName,
+          emailVerified: true
+        });
+      }
+    }
+
+    // 3. Seed Demo Users
+    for (const u of demoUsers) {
+      if (!(await User.exists({ email: u.email }))) {
+        const p = hashPassword("User@123");
+        await User.create({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          password: p,
+          role: "user",
+          phone: u.phone,
+          emailVerified: true
+        });
+      }
+    }
+
+    // 4. Seed Properties
+    const propCount = await Property.countDocuments();
+    if (propCount === 0) {
+      await Property.insertMany(demoProperties);
+
+      // Seed a demo completed deal to showcase 2% brokerage calculation
+      await Booking.create({
+        id: "B1001",
+        userId: "U101",
+        userName: "Rahul Verma",
+        userEmail: "rahul.renter@gmail.com",
+        userPhone: "+91 98765 43210",
+        brokerId: "B001",
+        propertyId: "P001",
+        propertyTitle: "Furnished Private Room in Malad West",
+        propertyLocation: "Malad West, Mumbai",
+        propertyPrice: 12500,
+        requestType: "booking",
+        requestedDate: "2026-10-01",
+        message: "Looking for immediate move-in for college semester.",
+        status: "completed",
+        agreedAmount: 12500,
+        brokerageRate: 0.02,
+        brokerageAmount: Math.round(12500 * 0.02),
+        completedAt: new Date()
       });
-      console.log(`✅ Demo Renter created: ${u.name} (${u.email} / User@123)`);
+
+      await Booking.create({
+        id: "B1002",
+        userId: "U101",
+        userName: "Rahul Verma",
+        userEmail: "rahul.renter@gmail.com",
+        userPhone: "+91 98765 43210",
+        brokerId: "B001",
+        propertyId: "P002",
+        propertyTitle: "Shared PG Near Andheri Station",
+        propertyLocation: "Andheri East, Mumbai",
+        propertyPrice: 9800,
+        requestType: "visit",
+        requestedDate: "Tomorrow at 4:00 PM",
+        message: "Want to inspect the room and amenities before final decision.",
+        status: "pending",
+        agreedAmount: 9800,
+        brokerageRate: 0.02,
+        brokerageAmount: 0
+      });
+
+      await Notification.create({
+        id: "N1001",
+        recipientId: "B001",
+        recipientRole: "broker",
+        type: "booking_request",
+        message: "New visit request from Rahul Verma for 'Shared PG Near Andheri Station'.",
+        bookingId: "B1002",
+        propertyTitle: "Shared PG Near Andheri Station",
+        read: false
+      });
+
+      console.log(`✅ Seeded demo properties and bookings.`);
     }
-  }
-
-  // 4. Seed Properties
-  const propCount = await Property.countDocuments();
-  if (propCount === 0) {
-    await Property.insertMany(demoProperties);
-    console.log(`✅ Seeded ${demoProperties.length} rental properties`);
-
-    // 5. Seed a demo completed deal to showcase 2% brokerage calculation
-    const demoBooking = await Booking.create({
-      id: "B1001",
-      userId: "U101",
-      userName: "Rahul Verma",
-      userEmail: "rahul.renter@gmail.com",
-      userPhone: "+91 98765 43210",
-      brokerId: "B001",
-      propertyId: "P001",
-      propertyTitle: "Furnished Private Room in Malad West",
-      propertyLocation: "Malad West, Mumbai",
-      propertyPrice: 12500,
-      requestType: "booking",
-      requestedDate: "2026-10-01",
-      message: "Looking for immediate move-in for college semester.",
-      status: "completed",
-      agreedAmount: 12500,
-      brokerageRate: 0.02,
-      brokerageAmount: Math.round(12500 * 0.02), // ₹250
-      completedAt: new Date()
-    });
-
-    // Seed sample pending booking
-    await Booking.create({
-      id: "B1002",
-      userId: "U101",
-      userName: "Rahul Verma",
-      userEmail: "rahul.renter@gmail.com",
-      userPhone: "+91 98765 43210",
-      brokerId: "B001",
-      propertyId: "P002",
-      propertyTitle: "Shared PG Near Andheri Station",
-      propertyLocation: "Andheri East, Mumbai",
-      propertyPrice: 9800,
-      requestType: "visit",
-      requestedDate: "Tomorrow at 4:00 PM",
-      message: "Want to inspect the room and amenities before final decision.",
-      status: "pending",
-      agreedAmount: 9800,
-      brokerageRate: 0.02,
-      brokerageAmount: 0
-    });
-
-    // Seed broker notification
-    await Notification.create({
-      id: "N1001",
-      recipientId: "B001",
-      recipientRole: "broker",
-      type: "booking_request",
-      message: "New visit request from Rahul Verma for 'Shared PG Near Andheri Station'.",
-      bookingId: "B1002",
-      propertyTitle: "Shared PG Near Andheri Station",
-      read: false
-    });
-
-    console.log("✅ Seeded demo booking and broker notification with 2% brokerage recorded");
+  } catch (err) {
+    console.error("Database seeding notice:", err.message);
   }
 }
+
+// ==========================================
+// HEALTH CHECK ROUTE (Vercel Monitoring)
+// ==========================================
+app.get("/api/health", (req, res) => {
+  res.json({
+    ok: true,
+    db: mongoose.connection.readyState,
+    appUrl: APP_URL,
+    cloudinary: Boolean(process.env.CLOUDINARY_CLOUD_NAME),
+    emailService: Boolean(mailer),
+    time: new Date().toISOString()
+  });
+});
 
 // ==========================================
 // AUTHENTICATION ROUTES
@@ -444,7 +455,7 @@ app.get("/api/auth/google-client-id", (req, res) => {
   });
 });
 
-// Demo OTP Helper for Viva Demonstration (active when SMTP is in offline demo mode)
+// Demo OTP Helper for Viva Demonstration
 app.get("/api/auth/demo-otp", async (req, res) => {
   if (mailer) {
     return res.status(403).json({ message: "SMTP is active. OTP was sent to your inbox." });
@@ -495,7 +506,7 @@ app.post("/api/auth/signup", async (req, res) => {
       emailSent,
       message: emailSent
         ? "Verification OTP sent to your email."
-        : "Email service in demo mode. Check server console for your 6-digit OTP."
+        : "Email service in demo mode. Check server console or click demo OTP helper."
     });
   } catch (err) {
     console.error("Signup error:", err);
@@ -635,7 +646,6 @@ app.post("/api/auth/google", async (req, res) => {
     let googleUser = null;
 
     if (credential && process.env.GOOGLE_CLIENT_ID) {
-      // Decode JWT payload safely
       try {
         const parts = credential.split(".");
         if (parts.length === 3) {
@@ -693,6 +703,16 @@ app.post("/api/auth/google", async (req, res) => {
   }
 });
 
+// Google OAuth Redirect Callback Route (For standard redirect flows)
+app.get(["/auth/google/callback", "/api/auth/google/callback"], (req, res) => {
+  if (req.session.user) {
+    if (req.session.user.role === "broker") return res.redirect("/broker-dashboard.html");
+    if (req.session.user.role === "admin") return res.redirect("/admin.html");
+    return res.redirect("/user-dashboard.html");
+  }
+  res.redirect("/login.html");
+});
+
 // Logout
 app.post("/api/auth/logout", (req, res) => {
   req.session.destroy((err) => {
@@ -703,19 +723,18 @@ app.post("/api/auth/logout", (req, res) => {
 });
 
 // ==========================================
-// FILE UPLOAD ROUTE (Cloudinary / Local)
+// FILE UPLOAD ROUTE (Direct to Cloudinary)
 // ==========================================
-
 app.post("/api/upload", requireBrokerOrAdmin, upload.single("image"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: "Please select an image file to upload." });
     }
-    const result = await uploadImageFile(req.file.buffer, req.file.originalname);
+    const result = await uploadToCloudinary(req.file.buffer, "gharbazaar_properties");
     res.json(result);
   } catch (err) {
     console.error("Upload error:", err);
-    res.status(500).json({ message: "Failed to upload image. Please try again." });
+    res.status(500).json({ message: "Failed to upload image to Cloudinary. Please try again." });
   }
 });
 
@@ -770,8 +789,12 @@ app.get("/api/properties", async (req, res) => {
 
 // Backwards compatibility alias for /api/rooms
 app.get("/api/rooms", async (req, res) => {
-  const properties = await Property.find().sort({ featured: -1, rating: -1 }).lean();
-  res.json(properties);
+  try {
+    const properties = await Property.find().sort({ featured: -1, rating: -1 }).lean();
+    res.json(properties);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to load rooms." });
+  }
 });
 
 // Get Single Property by ID
@@ -797,13 +820,13 @@ app.post("/api/properties", requireBrokerOrAdmin, upload.single("imageFile"), as
     let imageUrl = body.image || "";
     let images = [];
 
-    // If an image file was uploaded via form-data
+    // If image file uploaded via multipart form
     if (req.file) {
-      const uploaded = await uploadImageFile(req.file.buffer, req.file.originalname);
+      const uploaded = await uploadToCloudinary(req.file.buffer, "gharbazaar_properties");
       imageUrl = uploaded.url;
-      images.push({ url: uploaded.url, public_id: uploaded.public_id });
+      images.push({ url: uploaded.url, publicId: uploaded.publicId, public_id: uploaded.publicId });
     } else if (imageUrl) {
-      images.push({ url: imageUrl, public_id: "external" });
+      images.push({ url: imageUrl, publicId: "external", public_id: "external" });
     }
 
     if (!body.title || !body.location || !body.price || !imageUrl) {
@@ -836,7 +859,7 @@ app.post("/api/properties", requireBrokerOrAdmin, upload.single("imageFile"), as
       size: body.size || "200 sq.ft",
       amenities: amenitiesList,
       image: imageUrl,
-      images: images.length ? images : [{ url: imageUrl, public_id: "default" }],
+      images: images.length ? images : [{ url: imageUrl, publicId: "default", public_id: "default" }],
       description: body.description || "",
       availability: body.availability || "available",
       featured: Boolean(body.featured === true || body.featured === "true")
@@ -862,7 +885,6 @@ app.put("/api/properties/:id", requireBrokerOrAdmin, upload.single("imageFile"),
       return res.status(404).json({ message: "Property not found." });
     }
 
-    // Role ownership check
     if (user.role === "broker" && property.brokerId !== user.id) {
       return res.status(403).json({ message: "Unauthorized: You can only edit your own property listings." });
     }
@@ -872,9 +894,17 @@ app.put("/api/properties/:id", requireBrokerOrAdmin, upload.single("imageFile"),
     let images = property.images || [];
 
     if (req.file) {
-      const uploaded = await uploadImageFile(req.file.buffer, req.file.originalname);
+      const uploaded = await uploadToCloudinary(req.file.buffer, "gharbazaar_properties");
+      // Clean up previous image in Cloudinary if it had a valid publicId
+      if (property.images && property.images.length) {
+        const oldFirst = property.images[0];
+        const oldId = oldFirst.publicId || oldFirst.public_id;
+        if (oldId && oldId !== "external" && oldId !== "default" && !oldId.startsWith("seed_")) {
+          cloudinary.uploader.destroy(oldId).catch(e => console.error("Cloudinary replace destroy error:", e.message));
+        }
+      }
       imageUrl = uploaded.url;
-      images = [{ url: uploaded.url, public_id: uploaded.public_id }, ...images];
+      images = [{ url: uploaded.url, publicId: uploaded.publicId, public_id: uploaded.publicId }, ...images];
     } else if (body.image) {
       imageUrl = body.image;
     }
@@ -915,7 +945,7 @@ app.put("/api/properties/:id", requireBrokerOrAdmin, upload.single("imageFile"),
   }
 });
 
-// Toggle Property Availability (Available / Unavailable / Booked)
+// Toggle Property Availability
 app.patch("/api/properties/:id/availability", requireBrokerOrAdmin, async (req, res) => {
   try {
     const user = req.session.user;
@@ -944,7 +974,7 @@ app.patch("/api/properties/:id/availability", requireBrokerOrAdmin, async (req, 
   }
 });
 
-// Delete Property Listing (Broker can only delete their own; Admin can delete any)
+// Delete Property Listing
 app.delete("/api/properties/:id", requireBrokerOrAdmin, async (req, res) => {
   try {
     const user = req.session.user;
@@ -958,12 +988,13 @@ app.delete("/api/properties/:id", requireBrokerOrAdmin, async (req, res) => {
       return res.status(403).json({ message: "Unauthorized: You can only delete your own listings." });
     }
 
-    // Optional Cloudinary clean-up if public_id exists
-    if (hasCloudinary && property.images && property.images.length) {
+    // Clean up Cloudinary images
+    if (property.images && property.images.length) {
       for (const img of property.images) {
-        if (img.public_id && img.public_id !== "external" && img.public_id !== "default") {
+        const pid = img.publicId || img.public_id;
+        if (pid && pid !== "external" && pid !== "default" && !pid.startsWith("seed_")) {
           try {
-            await cloudinary.uploader.destroy(img.public_id);
+            await cloudinary.uploader.destroy(pid);
           } catch (e) {
             console.error("Cloudinary delete error:", e.message);
           }
@@ -979,18 +1010,37 @@ app.delete("/api/properties/:id", requireBrokerOrAdmin, async (req, res) => {
   }
 });
 
-// Backwards compatibility room endpoints
+// Backwards compatibility room endpoints for admin panel and legacy script
 app.post("/api/rooms", requireAdmin, async (req, res) => {
-  const room = await Property.create({ ...req.body, id: "R" + Date.now(), brokerId: req.session.user.id, brokerName: req.session.user.name });
-  res.status(201).json(room.toObject());
+  try {
+    const room = await Property.create({
+      ...req.body,
+      id: "R" + Date.now(),
+      brokerId: req.session.user.id,
+      brokerName: req.session.user.name
+    });
+    res.status(201).json(room.toObject());
+  } catch (err) {
+    res.status(500).json({ message: "Failed to create room." });
+  }
 });
+
 app.put("/api/rooms/:id", requireAdmin, async (req, res) => {
-  const room = await Property.findOneAndUpdate({ id: req.params.id }, { ...req.body }, { new: true }).lean();
-  res.json(room);
+  try {
+    const room = await Property.findOneAndUpdate({ id: req.params.id }, { ...req.body }, { new: true }).lean();
+    res.json(room);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update room." });
+  }
 });
+
 app.delete("/api/rooms/:id", requireAdmin, async (req, res) => {
-  await Property.deleteOne({ id: req.params.id });
-  res.json({ ok: true });
+  try {
+    await Property.deleteOne({ id: req.params.id });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to delete room." });
+  }
 });
 
 // ==========================================
@@ -1024,7 +1074,7 @@ app.get("/api/broker/profile", requireBroker, async (req, res) => {
   }
 });
 
-// Get Only Current Broker's Properties
+// Get Current Broker's Properties
 app.get("/api/broker/properties", requireBroker, async (req, res) => {
   try {
     const brokerId = req.session.user.id;
@@ -1124,7 +1174,7 @@ app.post("/api/bookings", requireAuth, async (req, res) => {
       status: "pending",
       agreedAmount: property.price,
       brokerageRate: 0.02,
-      brokerageAmount: 0 // Recorded when deal completes
+      brokerageAmount: 0
     });
 
     // Notify the Broker in MongoDB
@@ -1171,8 +1221,12 @@ app.post("/api/inquiries", requireAuth, async (req, res) => {
 });
 
 app.get("/api/inquiries", requireAdmin, async (req, res) => {
-  const list = await Booking.find().sort({ createdAt: -1 }).lean();
-  res.json(list);
+  try {
+    const list = await Booking.find().sort({ createdAt: -1 }).lean();
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch inquiries." });
+  }
 });
 
 // User Views Their Own Bookings
@@ -1188,7 +1242,7 @@ app.get("/api/bookings/my", requireAuth, async (req, res) => {
 });
 
 // Update Booking Status (Broker or Admin)
-// IMPORTANT: Marks Deal Completed and Calculates 2% Brokerage
+// Marks Deal Completed and Calculates 2% Brokerage
 app.patch("/api/bookings/:id/status", requireBrokerOrAdmin, async (req, res) => {
   try {
     const user = req.session.user;
@@ -1204,15 +1258,12 @@ app.patch("/api/bookings/:id/status", requireBrokerOrAdmin, async (req, res) => 
       return res.status(404).json({ message: "Booking request not found." });
     }
 
-    // Broker authorization check
     if (user.role === "broker" && booking.brokerId !== user.id) {
       return res.status(403).json({ message: "Unauthorized: You can only manage requests for your own listings." });
     }
 
     booking.status = status;
 
-    // When deal is marked COMPLETED:
-    // Calculate and record the 2% brokerage amount
     if (status === "completed") {
       const finalDealAmount = Number(agreedAmount) || booking.agreedAmount || booking.propertyPrice || 0;
       booking.agreedAmount = finalDealAmount;
@@ -1220,13 +1271,11 @@ app.patch("/api/bookings/:id/status", requireBrokerOrAdmin, async (req, res) => 
       booking.brokerageAmount = Math.round(finalDealAmount * 0.02);
       booking.completedAt = new Date();
 
-      // Optionally update property status to booked
       await Property.updateOne({ id: booking.propertyId }, { availability: "booked" });
     }
 
     await booking.save();
 
-    // Notify User about status update
     await Notification.create({
       id: "N" + Date.now(),
       recipientId: booking.userId,
@@ -1336,7 +1385,7 @@ app.get("/api/admin/bookings", requireAdmin, async (req, res) => {
 // FRONTEND PAGE ROUTE SERVING
 // ==========================================
 
-// Clean friendly URLs
+// Explicit landing and page routes
 app.get("/", (req, res) => res.sendFile(path.join(PUBLIC, "index.html")));
 app.get("/properties", (req, res) => res.sendFile(path.join(PUBLIC, "properties.html")));
 app.get("/property.html", (req, res) => res.sendFile(path.join(PUBLIC, "property.html")));
@@ -1364,7 +1413,6 @@ app.get(["/admin-login", "/admin-login.html"], (req, res) => {
   res.sendFile(path.join(PUBLIC, "admin-login.html"));
 });
 
-// Legacy /app route redirects to user dashboard or home
 app.get("/app", (req, res) => {
   if (req.session.user) {
     if (req.session.user.role === "broker") return res.redirect("/broker-dashboard.html");
@@ -1377,30 +1425,56 @@ app.get("/app", (req, res) => {
 // Static assets
 app.use(express.static(PUBLIC));
 
-// 404 Handler for APIs
-app.use("/api/*", (req, res) => {
-  res.status(404).json({ message: "API route not found." });
+// 404 Handler for API routes (returns JSON and never crashes)
+app.all("/api/*", (req, res) => {
+  res.status(404).json({ success: false, message: `API route not found: ${req.method} ${req.path}` });
 });
 
-// Global Fallback
+// Global Fallback for SPA routing
 app.get("*", (req, res) => {
   res.sendFile(path.join(PUBLIC, "index.html"));
 });
 
-// Start Server
-initDatabase()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`\n======================================================`);
-      console.log(`🚀 Ghar Bazaar Server running at http://localhost:${PORT}`);
-      console.log(`🌐 Public Landing Page: http://localhost:${PORT}`);
-      console.log(`🏢 Broker Portal:       http://localhost:${PORT}/broker-dashboard.html`);
-      console.log(`👤 User Dashboard:      http://localhost:${PORT}/user-dashboard.html`);
-      console.log(`🛠️  Admin Dashboard:     http://localhost:${PORT}/admin.html`);
-      console.log(`======================================================\n`);
+// Global Error Handler (Handles Multer size limits and unhandled errors gracefully)
+app.use((err, req, res, next) => {
+  console.error("Server Error:", err);
+
+  if (err.code === "LIMIT_FILE_SIZE") {
+    return res.status(413).json({
+      success: false,
+      message: "Image too large. Maximum file size allowed is 4MB."
     });
-  })
-  .catch(err => {
-    console.error("❌ Fatal Startup Error:", err.message);
-    process.exit(1);
-  });
+  }
+
+  if (req.path.startsWith("/api/")) {
+    return res.status(err.status || 500).json({
+      success: false,
+      message: err.message || "An internal server error occurred."
+    });
+  }
+
+  res.status(err.status || 500).send("Something went wrong. Please try again.");
+});
+
+// Start Server locally if not running as a Vercel serverless function
+if (!process.env.VERCEL) {
+  connectDB()
+    .then(() => seedDefaultData())
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`\n======================================================`);
+        console.log(`🚀 Ghar Bazaar Server running at ${APP_URL}`);
+        console.log(`🌐 Public Landing Page: ${APP_URL}`);
+        console.log(`🏢 Broker Portal:       ${APP_URL}/broker-dashboard.html`);
+        console.log(`👤 User Dashboard:      ${APP_URL}/user-dashboard.html`);
+        console.log(`🛠️  Admin Dashboard:     ${APP_URL}/admin.html`);
+        console.log(`======================================================\n`);
+      });
+    })
+    .catch(err => {
+      console.error("❌ Startup Warning:", err.message);
+    });
+}
+
+// Export app for Vercel Serverless Function entry point
+module.exports = app;

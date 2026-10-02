@@ -165,7 +165,7 @@
         return `
           <article class="property-card">
             <div class="card-img-wrap">
-              <img src="${p.image}" class="card-img" alt="${escapeHtml(p.title)}" loading="lazy">
+              <img src="${formatImageUrl(p.image)}" class="card-img" alt="${escapeHtml(p.title)}" loading="lazy">
               <span class="badge ${badgeClass} card-badge">${escapeHtml(p.badge || "Verified")}</span>
               <button class="card-fav-btn ${fav ? "active" : ""}" onclick="toggleFavorite('${p.id}')">
                 ${fav ? "♥" : "♡"}
