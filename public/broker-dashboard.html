@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Broker Portal | Ghar Bazaar</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Sticky Navbar -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="/" class="brand">
+        <div class="brand-icon">🏢</div>
+        <div>Ghar<span>Bazaar</span> <small style="font-size:12px;color:var(--muted);font-weight:600;margin-left:4px;">BROKER PORTAL</small></div>
+      </a>
+
+      <div class="nav-auth-group" id="navAuth">
+        <!-- Rendered by main.js -->
+      </div>
+    </div>
+  </header>
+
+  <main class="container" style="padding-top: 36px; padding-bottom: 60px;">
+    <!-- Top Broker Header -->
+    <div style="background: white; border-radius: var(--radius-xl); padding: 28px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+      <div>
+        <span class="badge badge-popular" style="margin-bottom: 6px;">VERIFIED BROKER / OWNER</span>
+        <h1 style="font-size: 26px; font-weight: 800;" id="brokerDisplayName">Broker Portal</h1>
+        <p style="color: var(--muted); font-size: 14px;" id="brokerAgencySub">Manage your rental inventory and renter visit requests.</p>
+      </div>
+
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <a href="/add-property.html" class="btn btn-primary">
+          <span>+ Add New Property</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-icon green">🏠</div>
+        <div class="stat-info">
+          <small>My Listings</small>
+          <strong id="statListings">0</strong>
+        </div>
+      </div>
+
+      <div class="stat-box">
+        <div class="stat-icon blue">📋</div>
+        <div class="stat-info">
+          <small>Pending Requests</small>
+          <strong id="statPending">0</strong>
+        </div>
+      </div>
+
+      <div class="stat-box">
+        <div class="stat-icon gold">🤝</div>
+        <div class="stat-info">
+          <small>Deals Completed</small>
+          <strong id="statCompleted">0</strong>
+        </div>
+      </div>
+
+      <div class="stat-box">
+        <div class="stat-icon purple">₹</div>
+        <div class="stat-info">
+          <small>Total 2% Brokerage</small>
+          <strong id="statBrokerage">₹0</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard Tabs -->
+    <div class="auth-tabs" style="max-width: 620px; margin-bottom: 24px;">
+      <button class="auth-tab active" id="tabPropsBtn" onclick="switchBrokerTab('props')">
+        🏡 My Properties (<span id="tabPropsCount">0</span>)
+      </button>
+      <button class="auth-tab" id="tabReqsBtn" onclick="switchBrokerTab('reqs')">
+        📬 Visit & Booking Requests (<span id="tabReqsCount">0</span>)
+      </button>
+      <button class="auth-tab" id="tabNotifsBtn" onclick="switchBrokerTab('notifs')">
+        🔔 Notifications (<span id="tabNotifsCount">0</span>)
+      </button>
+    </div>
+
+    <!-- Tab 1: My Properties -->
+    <div id="tabProps">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th>Location</th>
+              <th>Type</th>
+              <th>Monthly Rent</th>
+              <th>Status</th>
+              <th>Availability Toggle</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="propertiesTableBody">
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 30px;">Loading your properties...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="empty-box" id="emptyProps" style="display: none; margin-top: 20px;">
+        <div class="empty-box-icon">🏠</div>
+        <h4>You haven't listed any properties yet</h4>
+        <p>Start listing your apartments, rooms, PGs, or studios to connect with renters across Mumbai.</p>
+        <a href="/add-property.html" class="btn btn-primary">+ Add First Property</a>
+      </div>
+    </div>
+
+    <!-- Tab 2: Booking & Visit Requests -->
+    <div id="tabReqs" style="display: none;">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Renter Info</th>
+              <th>Property</th>
+              <th>Request Type</th>
+              <th>Requested Schedule</th>
+              <th>Status</th>
+              <th>Message</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="requestsTableBody">
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 30px;">Loading requests...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="empty-box" id="emptyReqs" style="display: none; margin-top: 20px;">
+        <div class="empty-box-icon">📬</div>
+        <h4>No booking or visit requests</h4>
+        <p>When renters submit visit or booking requests for your properties, they will appear here.</p>
+      </div>
+    </div>
+
+    <!-- Tab 3: Notifications -->
+    <div id="tabNotifs" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="font-size: 18px; font-weight: 800;">Recent Notifications</h3>
+        <button class="btn btn-outline btn-sm" onclick="markAllNotificationsRead()">Mark All as Read</button>
+      </div>
+
+      <div id="notificationsList" style="display: flex; flex-direction: column; gap: 12px;">
+        <!-- Rendered by JavaScript -->
+      </div>
+
+      <div class="empty-box" id="emptyNotifs" style="display: none; margin-top: 20px;">
+        <div class="empty-box-icon">🔔</div>
+        <h4>No unread notifications</h4>
+        <p>You are all caught up with your notifications.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Complete Deal Modal (2% Brokerage Calculation) -->
+  <div class="modal-overlay" id="dealModal">
+    <div class="modal-box" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3>Finalize Deal & Record Brokerage</h3>
+        <button class="modal-close" onclick="closeDealModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 14px; color: var(--muted); margin-bottom: 18px;">
+          Confirm the final agreed deal amount. Ghar Bazaar will automatically calculate and record the <strong>2% mediator brokerage fee</strong>.
+        </p>
+
+        <form id="dealForm">
+          <input type="hidden" id="dealBookingId">
+          <div class="form-group">
+            <label for="dealAgreedAmount">Final Agreed Monthly Rent Deal (₹)</label>
+            <input type="number" id="dealAgreedAmount" class="form-control" min="1000" step="500" required>
+          </div>
+
+          <div class="brokerage-example" style="margin-bottom: 20px;">
+            <div class="calc-row">
+              <span>Agreed Deal Amount</span>
+              <strong id="dealAmountDisplay">₹0</strong>
+            </div>
+            <div class="calc-row">
+              <span>Platform Mediator Fee</span>
+              <span>2.0%</span>
+            </div>
+            <div class="calc-row total">
+              <span>2% Brokerage Recorded</span>
+              <span id="dealBrokerageDisplay">₹0</span>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block btn-lg" id="confirmDealBtn">
+            <span>Mark Deal Completed & Record Brokerage</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+  <script>
+    let myProperties = [];
+    let myBookings = [];
+    let notifications = [];
+
+    async function initBrokerDashboard() {
+      const user = await checkAuthStatus();
+      if (!user) {
+        showToast("Please log in to access the broker portal.", "warning");
+        setTimeout(() => window.location.href = "/broker-login.html", 800);
+        return;
+      }
+
+      if (user.role !== "broker" && user.role !== "admin") {
+        showToast("Access denied: Broker credentials required.", "error");
+        setTimeout(() => window.location.href = "/", 1000);
+        return;
+      }
+
+      document.getElementById("brokerDisplayName").textContent = `Welcome, ${user.name}`;
+      document.getElementById("brokerAgencySub").textContent = `${user.agencyName ? user.agencyName + " • " : ""}Licensed Broker Portal • ${user.email}`;
+
+      await loadBrokerProfile();
+      await loadBrokerProperties();
+      await loadBrokerBookings();
+      await loadBrokerNotifications();
+    }
+
+    async function loadBrokerProfile() {
+      try {
+        const res = await api("/api/broker/profile");
+        const stats = res.stats;
+        document.getElementById("statListings").textContent = stats.totalListings;
+        document.getElementById("statPending").textContent = stats.pendingRequests;
+        document.getElementById("statCompleted").textContent = stats.completedDeals;
+        document.getElementById("statBrokerage").textContent = money(stats.totalBrokerageEarned);
+      } catch (err) {
+        console.error("Profile load error:", err);
+      }
+    }
+
+    async function loadBrokerProperties() {
+      try {
+        const props = await api("/api/broker/properties");
+        myProperties = props;
+        document.getElementById("tabPropsCount").textContent = props.length;
+        renderPropertiesTable(props);
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    function renderPropertiesTable(list) {
+      const tbody = document.getElementById("propertiesTableBody");
+      const empty = document.getElementById("emptyProps");
+
+      if (list.length === 0) {
+        tbody.innerHTML = "";
+        empty.style.display = "block";
+        return;
+      }
+
+      empty.style.display = "none";
+      tbody.innerHTML = list.map(p => `
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <img src="${p.image}" alt="" style="width:52px;height:52px;border-radius:8px;object-fit:cover;">
+              <div>
+                <strong style="color:var(--dark); font-size:14.5px;">${escapeHtml(p.title)}</strong>
+                <div style="font-size:12px; color:var(--muted)">ID: ${p.id}</div>
+              </div>
+            </div>
+          </td>
+          <td>📍 ${escapeHtml(p.location)}</td>
+          <td><span class="badge" style="background:#e2e8f0;color:#334155;">${typeLabel(p.type)}</span></td>
+          <td><strong>${money(p.price)}</strong></td>
+          <td>
+            <span class="badge badge-${p.availability === 'booked' ? 'booked' : p.availability === 'unavailable' ? 'unavailable' : 'available'}">
+              ${p.availability.toUpperCase()}
+            </span>
+          </td>
+          <td>
+            <button class="btn btn-outline btn-sm" onclick="toggleAvailability('${p.id}')">
+              ${p.availability === 'available' ? 'Mark Unavailable' : 'Mark Available'}
+            </button>
+          </td>
+          <td>
+            <div style="display:flex;gap:6px;">
+              <a href="/add-property.html?edit=${p.id}" class="btn btn-outline btn-sm">Edit</a>
+              <button class="btn btn-outline btn-sm" style="color:var(--danger);" onclick="deleteMyProperty('${p.id}')">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    async function toggleAvailability(id) {
+      try {
+        const res = await api(`/api/properties/${id}/availability`, { method: "PATCH" });
+        showToast(res.message, "success");
+        await loadBrokerProperties();
+        await loadBrokerProfile();
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    async function deleteMyProperty(id) {
+      if (!confirm("Are you sure you want to permanently delete this property listing?")) return;
+      try {
+        const res = await api(`/api/properties/${id}`, { method: "DELETE" });
+        showToast(res.message || "Property removed.", "success");
+        await loadBrokerProperties();
+        await loadBrokerProfile();
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    async function loadBrokerBookings() {
+      try {
+        const bookings = await api("/api/broker/bookings");
+        myBookings = bookings;
+        document.getElementById("tabReqsCount").textContent = bookings.length;
+        renderBookingsTable(bookings);
+      } catch (err) {
+        console.error("Bookings load error:", err);
+      }
+    }
+
+    function renderBookingsTable(list) {
+      const tbody = document.getElementById("requestsTableBody");
+      const empty = document.getElementById("emptyReqs");
+
+      if (list.length === 0) {
+        tbody.innerHTML = "";
+        empty.style.display = "block";
+        return;
+      }
+
+      empty.style.display = "none";
+      tbody.innerHTML = list.map(b => {
+        let statusBadge = "status-pending";
+        if (b.status === "accepted") statusBadge = "status-accepted";
+        if (b.status === "completed") statusBadge = "status-completed";
+        if (b.status === "rejected") statusBadge = "status-rejected";
+
+        return `
+          <tr>
+            <td>
+              <strong style="color:var(--dark); font-size:14px;">${escapeHtml(b.userName)}</strong>
+              <div style="font-size:12px; color:var(--muted);">📞 ${escapeHtml(b.userPhone || "Not provided")}</div>
+              <div style="font-size:12px; color:var(--muted);">✉️ ${escapeHtml(b.userEmail)}</div>
+            </td>
+            <td>
+              <strong>${escapeHtml(b.propertyTitle)}</strong>
+              <div style="font-size:12px; color:var(--muted)">Rent: ${money(b.propertyPrice)}</div>
+            </td>
+            <td>
+              <span class="badge ${b.requestType === 'visit' ? 'badge-new' : 'badge-popular'}">
+                ${b.requestType === 'visit' ? 'Schedule Visit' : 'Booking Request'}
+              </span>
+            </td>
+            <td><strong>${escapeHtml(b.requestedDate || "Flexible")}</strong></td>
+            <td>
+              <span class="status-pill ${statusBadge}">
+                ${b.status.toUpperCase()}
+              </span>
+              ${b.status === 'completed' ? `<div style="font-size:11px;color:var(--primary);font-weight:700;margin-top:2px;">Brokerage: ${money(b.brokerageAmount)}</div>` : ''}
+            </td>
+            <td style="max-width:200px;font-size:13px;color:#475569;">
+              ${escapeHtml(b.message || "No additional message")}
+            </td>
+            <td>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                ${b.status === 'pending' ? `
+                  <button class="btn btn-primary btn-sm" onclick="updateBookingStatus('${b.id}', 'accepted')">Accept Request</button>
+                  <button class="btn btn-outline btn-sm" style="color:var(--danger);" onclick="updateBookingStatus('${b.id}', 'rejected')">Reject</button>
+                ` : ''}
+                ${b.status === 'accepted' ? `
+                  <button class="btn btn-secondary btn-sm" onclick="openDealModal('${b.id}', ${b.agreedAmount || b.propertyPrice})">
+                    Mark Completed (2%)
+                  </button>
+                ` : ''}
+                ${b.status === 'completed' ? `
+                  <span style="font-size:12px;color:var(--success);font-weight:700;">✓ Deal Closed</span>
+                ` : ''}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    async function updateBookingStatus(bookingId, status) {
+      try {
+        const res = await api(`/api/bookings/${bookingId}/status`, {
+          method: "PATCH",
+          body: JSON.stringify({ status })
+        });
+        showToast(res.message, "success");
+        await loadBrokerBookings();
+        await loadBrokerProfile();
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    // 2% Deal Completion Modal Controller
+    function openDealModal(bookingId, defaultAmount) {
+      document.getElementById("dealBookingId").value = bookingId;
+      document.getElementById("dealAgreedAmount").value = defaultAmount;
+      updateDealBrokerageCalculation();
+      document.getElementById("dealModal").classList.add("active");
+    }
+
+    function closeDealModal() {
+      document.getElementById("dealModal").classList.remove("active");
+    }
+
+    function updateDealBrokerageCalculation() {
+      const amount = Number(document.getElementById("dealAgreedAmount").value) || 0;
+      const brokerage = Math.round(amount * 0.02);
+      document.getElementById("dealAmountDisplay").textContent = money(amount);
+      document.getElementById("dealBrokerageDisplay").textContent = money(brokerage);
+    }
+
+    document.getElementById("dealAgreedAmount")?.addEventListener("input", updateDealBrokerageCalculation);
+
+    document.getElementById("dealForm")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const bookingId = document.getElementById("dealBookingId").value;
+      const agreedAmount = Number(document.getElementById("dealAgreedAmount").value);
+
+      const btn = document.getElementById("confirmDealBtn");
+      btn.disabled = true;
+      btn.innerHTML = "<span>Recording 2% Brokerage...</span>";
+
+      try {
+        const res = await api(`/api/bookings/${bookingId}/status`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            status: "completed",
+            agreedAmount
+          })
+        });
+
+        showToast(res.message, "success");
+        closeDealModal();
+        await loadBrokerBookings();
+        await loadBrokerProfile();
+        await loadBrokerProperties();
+      } catch (err) {
+        showToast(err.message, "error");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = "<span>Mark Deal Completed & Record Brokerage</span>";
+      }
+    });
+
+    // Notifications
+    async function loadBrokerNotifications() {
+      try {
+        const res = await api("/api/broker/notifications");
+        notifications = res.notifications || [];
+        document.getElementById("tabNotifsCount").textContent = res.unreadCount || 0;
+        renderNotifications(notifications);
+      } catch (err) {
+        console.error("Notifications error:", err);
+      }
+    }
+
+    function renderNotifications(list) {
+      const container = document.getElementById("notificationsList");
+      const empty = document.getElementById("emptyNotifs");
+
+      if (list.length === 0) {
+        container.innerHTML = "";
+        empty.style.display = "block";
+        return;
+      }
+
+      empty.style.display = "none";
+      container.innerHTML = list.map(n => `
+        <div style="background: white; border: 1px solid var(--border); border-left: 4px solid ${n.read ? 'var(--border)' : 'var(--primary)'}; border-radius: var(--radius-md); padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-sm);">
+          <div>
+            <div style="font-weight: 700; font-size: 14.5px; color: var(--dark);">${escapeHtml(n.message)}</div>
+            <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">
+              ${new Date(n.createdAt).toLocaleDateString()} at ${new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </div>
+          </div>
+          ${!n.read ? `
+            <button class="btn btn-outline btn-sm" onclick="markNotificationRead('${n.id}')">Mark Read</button>
+          ` : '<span style="font-size:12px;color:var(--muted)">Read</span>'}
+        </div>
+      `).join("");
+    }
+
+    async function markNotificationRead(id) {
+      try {
+        await api(`/api/broker/notifications/${id}/read`, { method: "PATCH" });
+        await loadBrokerNotifications();
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    async function markAllNotificationsRead() {
+      try {
+        await api("/api/broker/notifications/read-all", { method: "POST" });
+        showToast("All notifications marked as read.", "success");
+        await loadBrokerNotifications();
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    function switchBrokerTab(tab) {
+      document.querySelectorAll(".auth-tab").forEach(t => t.classList.remove("active"));
+      document.getElementById("tabProps").style.display = "none";
+      document.getElementById("tabReqs").style.display = "none";
+      document.getElementById("tabNotifs").style.display = "none";
+
+      if (tab === "props") {
+        document.getElementById("tabPropsBtn").classList.add("active");
+        document.getElementById("tabProps").style.display = "block";
+      } else if (tab === "reqs") {
+        document.getElementById("tabReqsBtn").classList.add("active");
+        document.getElementById("tabReqs").style.display = "block";
+      } else {
+        document.getElementById("tabNotifsBtn").classList.add("active");
+        document.getElementById("tabNotifs").style.display = "block";
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      initBrokerDashboard();
+    });
+  </script>
+</body>
+</html>

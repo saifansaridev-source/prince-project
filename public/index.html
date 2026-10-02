@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Ghar Bazaar - Simple Rental Marketplace & Mediator Platform. Find verified rooms, PGs, and apartments with direct broker connection.">
+  <title>Ghar Bazaar | Find a Place. Connect with the Right Broker.</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Sticky Navbar -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="/" class="brand">
+        <div class="brand-icon">🏠</div>
+        <div>Ghar<span>Bazaar</span></div>
+      </a>
+
+      <button class="mobile-toggle" aria-label="Toggle menu">☰</button>
+
+      <ul class="nav-menu">
+        <li><a href="#explore" class="nav-link">Explore Stays</a></li>
+        <li><a href="#how-it-works" class="nav-link">How It Works</a></li>
+        <li><a href="#brokerage" class="nav-link">2% Brokerage</a></li>
+        <li><a href="#for-brokers" class="nav-link">For Brokers</a></li>
+      </ul>
+
+      <div class="nav-auth-group" id="navAuth">
+        <!-- Injected dynamically by main.js -->
+        <a href="/login.html" class="btn btn-outline btn-sm">Login</a>
+        <a href="/signup.html" class="btn btn-primary btn-sm">Sign Up</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-pill">✓ Verified Rental Marketplace & Mediator</div>
+      <h1 class="hero-title">Find a place. Connect with the <span>right broker.</span></h1>
+      <p class="hero-subtitle">
+        Browse curated private rooms, PGs, studios, and apartments across Mumbai. Ghar Bazaar connects renters directly with trusted brokers with a clear, transparent 2% brokerage recording on finalized deals.
+      </p>
+
+      <!-- Search Bar Component -->
+      <div class="search-card" id="searchContainer">
+        <div class="search-field">
+          <label for="searchLocation">Location / Area</label>
+          <input type="text" id="searchLocation" placeholder="e.g. Malad, Andheri, Powai, Borivali...">
+        </div>
+
+        <div class="search-field">
+          <label for="searchType">Property Type</label>
+          <select id="searchType">
+            <option value="">All Types</option>
+            <option value="private">Private Room</option>
+            <option value="pg">PG Accommodation</option>
+            <option value="studio">Studio Apartment</option>
+            <option value="apartment">Full Apartment</option>
+          </select>
+        </div>
+
+        <div class="search-field">
+          <label for="searchBudget">Max Monthly Rent</label>
+          <select id="searchBudget">
+            <option value="">Any Rent</option>
+            <option value="10000">Up to ₹10,000</option>
+            <option value="15000">Up to ₹15,000</option>
+            <option value="20000">Up to ₹20,000</option>
+            <option value="30000">Up to ₹30,000</option>
+            <option value="40000">Up to ₹40,000</option>
+          </select>
+        </div>
+
+        <button class="btn btn-primary btn-lg" id="searchBtn" style="height: 100%;">
+          <span>🔍 Search Stays</span>
+        </button>
+      </div>
+
+      <!-- Trust Badges -->
+      <div class="trust-bar">
+        <div class="trust-item"><span>✓</span> 100% Verified Listings</div>
+        <div class="trust-item"><span>✓</span> Direct Owner & Broker Mediation</div>
+        <div class="trust-item"><span>✓</span> Transparent 2% Brokerage Record</div>
+        <div class="trust-item"><span>✓</span> Fast Visit Request Booking</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Categories Section -->
+  <section class="section" style="padding-bottom: 20px;">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <span class="section-tag">CATEGORIES</span>
+          <h2 class="section-title">Explore by Accommodation Type</h2>
+          <p class="section-desc">Choose from budget-friendly student PGs to premium furnished studios.</p>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+        <div class="stat-box category-chip" data-type="" style="cursor: pointer;">
+          <div class="stat-icon green">🏠</div>
+          <div class="stat-info">
+            <strong style="font-size: 16px;">All Properties</strong>
+            <small>Browse Entire Catalog</small>
+          </div>
+        </div>
+
+        <div class="stat-box category-chip" data-type="private" style="cursor: pointer;">
+          <div class="stat-icon blue">🛏️</div>
+          <div class="stat-info">
+            <strong style="font-size: 16px;">Private Rooms</strong>
+            <small>Independent & Furnished</small>
+          </div>
+        </div>
+
+        <div class="stat-box category-chip" data-type="pg" style="cursor: pointer;">
+          <div class="stat-icon gold">👥</div>
+          <div class="stat-info">
+            <strong style="font-size: 16px;">PG & Hostels</strong>
+            <small>Meals & WiFi Included</small>
+          </div>
+        </div>
+
+        <div class="stat-box category-chip" data-type="studio" style="cursor: pointer;">
+          <div class="stat-icon purple">🛋️</div>
+          <div class="stat-info">
+            <strong style="font-size: 16px;">Studio Flats</strong>
+            <small>Self-Contained Units</small>
+          </div>
+        </div>
+
+        <div class="stat-box category-chip" data-type="apartment" style="cursor: pointer;">
+          <div class="stat-icon green">🏢</div>
+          <div class="stat-info">
+            <strong style="font-size: 16px;">Apartments</strong>
+            <small>1BHK & 2BHK Homes</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured & Filterable Listings -->
+  <section class="section" id="explore">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <span class="section-tag">LIVE MARKETPLACE</span>
+          <h2 class="section-title">Available Rental Properties</h2>
+          <p class="section-desc" id="propertiesCount">Loading active listings...</p>
+        </div>
+
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <select id="sortBy" class="form-control" style="width: auto; padding: 8px 14px; font-weight: 600;">
+            <option value="featured">Sort: Featured</option>
+            <option value="low">Price: Low to High</option>
+            <option value="high">Price: High to Low</option>
+            <option value="rating">Top Rated</option>
+            <option value="newest">Newest First</option>
+          </select>
+          <button class="btn btn-outline btn-sm" id="resetFiltersBtn">Reset Filters</button>
+        </div>
+      </div>
+
+      <!-- Properties Grid -->
+      <div class="property-grid" id="propertiesGrid">
+        <!-- Rendered by JavaScript -->
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-box" id="emptyState" style="display: none;">
+        <div class="empty-box-icon">🔍</div>
+        <h4>No rental listings found</h4>
+        <p>No properties match your current search criteria. Try modifying your filters or clearing them.</p>
+        <button class="btn btn-primary" onclick="resetAllFilters()">View All Listings</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section class="section" id="how-it-works" style="background: white; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+    <div class="container">
+      <div class="section-head" style="text-align: center; justify-content: center;">
+        <div>
+          <span class="section-tag">EFFORTLESS PROCESS</span>
+          <h2 class="section-title">How Ghar Bazaar Works</h2>
+          <p class="section-desc">A transparent bridge connecting renters with verified property brokers.</p>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-top: 20px;">
+        <div style="padding: 24px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--bg-main);">
+          <div style="width: 44px; height: 44px; border-radius: 12px; background: var(--primary); color: white; display: grid; place-items: center; font-weight: 800; font-size: 18px; margin-bottom: 16px;">1</div>
+          <h4 style="font-size: 17px; font-weight: 700; margin-bottom: 8px;">Browse Verified Stays</h4>
+          <p style="color: var(--muted); font-size: 14px;">Filter through high-resolution photos, real monthly rents, security deposits, and amenities without guesswork.</p>
+        </div>
+
+        <div style="padding: 24px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--bg-main);">
+          <div style="width: 44px; height: 44px; border-radius: 12px; background: var(--primary); color: white; display: grid; place-items: center; font-weight: 800; font-size: 18px; margin-bottom: 16px;">2</div>
+          <h4 style="font-size: 17px; font-weight: 700; margin-bottom: 8px;">Request Visit or Booking</h4>
+          <p style="color: var(--muted); font-size: 14px;">Submit a 1-click visit or booking inquiry with your preferred schedule directly from the property card.</p>
+        </div>
+
+        <div style="padding: 24px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--bg-main);">
+          <div style="width: 44px; height: 44px; border-radius: 12px; background: var(--primary); color: white; display: grid; place-items: center; font-weight: 800; font-size: 18px; margin-bottom: 16px;">3</div>
+          <h4 style="font-size: 17px; font-weight: 700; margin-bottom: 8px;">Broker Notified Instantly</h4>
+          <p style="color: var(--muted); font-size: 14px;">The property broker receives real-time portal notifications to review, contact you, and confirm the visit.</p>
+        </div>
+
+        <div style="padding: 24px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--bg-main);">
+          <div style="width: 44px; height: 44px; border-radius: 12px; background: var(--secondary); color: white; display: grid; place-items: center; font-weight: 800; font-size: 18px; margin-bottom: 16px;">4</div>
+          <h4 style="font-size: 17px; font-weight: 700; margin-bottom: 8px;">Deal Completed & Recorded</h4>
+          <p style="color: var(--muted); font-size: 14px;">Once you finalize the rental deal, Ghar Bazaar records the standard 2% brokerage mediation fee in the platform ledger.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2% Brokerage Explanation Section -->
+  <section class="section" id="brokerage">
+    <div class="container">
+      <div class="brokerage-box">
+        <div class="brokerage-content">
+          <span class="badge badge-popular" style="margin-bottom: 12px;">MEDIATOR BUSINESS MODEL</span>
+          <h3>Fair & Transparent: The 2% Brokerage Model</h3>
+          <p>
+            Ghar Bazaar acts as the reliable mediator between renters and property owners/brokers. We eliminate inflated arbitrary commissions by establishing a clear <strong>2% brokerage calculation</strong> on successfully finalized rental deals.
+          </p>
+          <p style="font-size: 14px; color: var(--muted);">
+            • No advance or hidden registration fees for renters.<br>
+            • Deals are only marked completed when the tenant and broker agree.<br>
+            • Complete digital recording for institutional accountability.
+          </p>
+        </div>
+
+        <div class="brokerage-example">
+          <h4 style="font-size: 15px; font-weight: 700; color: var(--dark); margin-bottom: 14px;">Brokerage Calculation Example</h4>
+          <div class="calc-row">
+            <span>Agreed Monthly Rental Deal</span>
+            <strong>₹20,000</strong>
+          </div>
+          <div class="calc-row">
+            <span>Platform Brokerage Rate</span>
+            <span>2.0%</span>
+          </div>
+          <div class="calc-row total">
+            <span>Recorded Brokerage Fee</span>
+            <span>₹400</span>
+          </div>
+          <small style="color: var(--muted); display: block; margin-top: 10px; font-size: 12px;">
+            Formula: Agreed Deal Amount × 0.02 = Platform Brokerage Recorded
+          </small>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- For Renters & For Brokers Dual Section -->
+  <section class="section" id="for-brokers" style="padding-top: 0;">
+    <div class="container">
+      <div class="dual-cta">
+        <div class="cta-card renter">
+          <div>
+            <span class="badge badge-verified" style="margin-bottom: 12px;">FOR RENTERS</span>
+            <h3>Looking for your next home?</h3>
+            <p>Save hours of unverified physical visits. Filter listings by your maximum budget, save your favourite rooms, and schedule visits directly through your renter dashboard.</p>
+          </div>
+          <div>
+            <a href="/signup.html" class="btn btn-primary">Create Renter Account →</a>
+          </div>
+        </div>
+
+        <div class="cta-card broker">
+          <div>
+            <span class="badge badge-popular" style="margin-bottom: 12px;">FOR BROKERS & OWNERS</span>
+            <h3>Are you a Property Broker?</h3>
+            <p>List your rental properties with high-res Cloudinary images. Receive structured visit requests, manage your inventory availability, and record deal completions effortlessly.</p>
+          </div>
+          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <a href="/broker-signup.html" class="btn btn-secondary">Register as Broker</a>
+            <a href="/broker-login.html" class="btn btn-outline" style="color: white; border-color: #334155;">Broker Portal</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Property Details & Booking Modal -->
+  <div class="modal-overlay" id="propertyModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modalTitle">Property Details</h3>
+        <button class="modal-close" onclick="closePropertyModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div style="border-radius: var(--radius-md); overflow: hidden; margin-bottom: 20px; max-height: 320px; background: #e2e8f0;">
+          <img id="modalImage" src="" alt="Property" style="width: 100%; height: 300px; object-fit: cover;">
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <span class="badge badge-verified" id="modalBadge">Verified</span>
+            <span id="modalType" style="font-size: 13px; font-weight: 700; color: var(--muted); margin-left: 8px; text-transform: uppercase;"></span>
+            <div style="font-size: 24px; font-weight: 800; color: var(--primary); margin-top: 6px;">
+              <span id="modalPrice">₹0</span> <small style="font-size: 14px; font-weight: 500; color: var(--muted);">/ month</small>
+            </div>
+            <div style="font-size: 13px; color: var(--muted);">Deposit: <strong id="modalDeposit" style="color: var(--dark);">₹0</strong></div>
+          </div>
+
+          <div style="text-align: right;">
+            <span id="modalRating" style="font-size: 14px; font-weight: 700;">★ 4.8</span>
+            <div id="modalAvailability" class="badge badge-available" style="margin-top: 6px; display: block;">Available</div>
+          </div>
+        </div>
+
+        <p id="modalLocation" style="color: var(--muted); font-size: 14px; margin-bottom: 16px;">📍 Location</p>
+
+        <!-- Specifications -->
+        <div class="card-specs" style="margin-bottom: 18px;">
+          <span>🛏️ <strong id="modalBeds">1 Bed</strong></span>
+          <span>🚿 <strong id="modalBath">Private Bath</strong></span>
+          <span>📐 <strong id="modalSize">200 sq.ft</strong></span>
+        </div>
+
+        <!-- Description -->
+        <div style="margin-bottom: 20px;">
+          <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 6px;">About this property</h4>
+          <p id="modalDescription" style="font-size: 14px; color: #475569; line-height: 1.6;"></p>
+        </div>
+
+        <!-- Amenities -->
+        <div style="margin-bottom: 24px;">
+          <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">Amenities & Features</h4>
+          <div id="modalAmenities" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+        </div>
+
+        <!-- Broker Details Card -->
+        <div style="background: var(--bg-subtle); border-radius: var(--radius-md); padding: 16px; margin-bottom: 24px; border: 1px solid var(--border);">
+          <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--muted); margin-bottom: 4px;">LISTED BY BROKER</div>
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <strong id="modalBrokerName" style="font-size: 15px; color: var(--dark);">Broker Name</strong>
+              <div id="modalBrokerAgency" style="font-size: 13px; color: var(--primary); font-weight: 600;">Agency</div>
+            </div>
+            <div style="font-size: 13px; color: var(--muted);">
+              📞 <span id="modalBrokerPhone">+91 ...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Booking / Visit Request Form -->
+        <div style="border-top: 1px solid var(--border); padding-top: 20px;">
+          <h4 style="font-size: 16px; font-weight: 800; margin-bottom: 4px;">Request Booking or Visit</h4>
+          <p style="font-size: 13px; color: var(--muted); margin-bottom: 16px;">The broker will receive an instant notification with your contact information.</p>
+
+          <form id="bookingForm">
+            <input type="hidden" id="bookingPropertyId">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="requestType">Action Type</label>
+                <select id="requestType" class="form-control" required>
+                  <option value="visit">Schedule In-Person Visit</option>
+                  <option value="booking">Request Room Booking</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="preferredDate">Preferred Date / Time</label>
+                <input type="text" id="preferredDate" class="form-control" placeholder="e.g. Tomorrow at 3 PM or Weekend" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="userPhone">Your Contact Phone</label>
+              <input type="tel" id="userPhone" class="form-control" placeholder="+91 98765 43210" required>
+            </div>
+
+            <div class="form-group">
+              <label for="userMessage">Message / Questions for Broker (Optional)</label>
+              <textarea id="userMessage" class="form-control" rows="2" placeholder="Mention any specific requirements or move-in timeline..."></textarea>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+              <button type="submit" class="btn btn-primary btn-block btn-lg" id="submitBookingBtn">
+                <span>Submit Request to Broker</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-top">
+        <div>
+          <div class="footer-brand">Ghar<span>Bazaar</span></div>
+          <p style="font-size: 14px; line-height: 1.6; max-width: 320px;">
+            A modern rental mediator platform connecting prospective tenants with verified brokers and property owners.
+          </p>
+          <div style="margin-top: 14px; font-size: 13px;">
+            Third-Year College Project Demo • 2% Recorded Mediation Brokerage
+          </div>
+        </div>
+
+        <div class="footer-links">
+          <h4>Explore</h4>
+          <ul>
+            <li><a href="#explore">Private Rooms</a></li>
+            <li><a href="#explore">PGs in Mumbai</a></li>
+            <li><a href="#explore">Studio Apartments</a></li>
+            <li><a href="#explore">1BHK & 2BHK Homes</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links">
+          <h4>Portals</h4>
+          <ul>
+            <li><a href="/login.html">Renter Login</a></li>
+            <li><a href="/broker-login.html">Broker Portal</a></li>
+            <li><a href="/broker-signup.html">Register as Broker</a></li>
+            <li><a href="/admin-login.html">Admin Access</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links">
+          <h4>Platform Model</h4>
+          <ul>
+            <li><a href="#brokerage">2% Brokerage Rules</a></li>
+            <li><a href="#how-it-works">Mediation Workflow</a></li>
+            <li><a href="#">Terms & Conditions</a></li>
+            <li><a href="#">Support: support@gharbazaar.com</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>© 2026 Ghar Bazaar Rental Mediator Platform. All rights reserved.</div>
+        <div>Designed for Third-Year Engineering / Computer Science Viva Presentation.</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+  <script>
+    let allProperties = [];
+    let currentSelectedProperty = null;
+
+    // Load Properties from API
+    async function loadProperties() {
+      try {
+        const properties = await api("/api/properties");
+        allProperties = properties;
+        renderProperties(properties);
+      } catch (err) {
+        console.error("Failed to load properties:", err);
+        showToast("Could not load properties. " + err.message, "error");
+      }
+    }
+
+    // Render Property Cards
+    function renderProperties(list) {
+      const grid = document.getElementById("propertiesGrid");
+      const empty = document.getElementById("emptyState");
+      const countEl = document.getElementById("propertiesCount");
+
+      if (!grid) return;
+
+      countEl.textContent = `Showing ${list.length} verified propert${list.length === 1 ? "y" : "ies"}`;
+
+      if (list.length === 0) {
+        grid.innerHTML = "";
+        empty.style.display = "block";
+        return;
+      }
+
+      empty.style.display = "none";
+      grid.innerHTML = list.map(p => {
+        const fav = isFavorite(p.id);
+        const badgeClass = p.badge ? `badge-${p.badge.toLowerCase().replace(/[^a-z]/g, "")}` : "badge-verified";
+        return `
+          <article class="property-card" data-id="${p.id}">
+            <div class="card-img-wrap">
+              <img src="${p.image}" class="card-img" alt="${escapeHtml(p.title)}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800'">
+              <span class="badge ${badgeClass} card-badge">${escapeHtml(p.badge || "Verified")}</span>
+              <button class="card-fav-btn ${fav ? "active" : ""}" data-id="${p.id}" onclick="event.stopPropagation(); toggleFavorite('${p.id}')" title="Save to Favourites">
+                ${fav ? "♥" : "♡"}
+              </button>
+              <div class="card-type-tag">${typeLabel(p.type)}</div>
+            </div>
+
+            <div class="card-body">
+              <div class="card-price-row">
+                <div class="card-price">${money(p.price)} <small>/ mo</small></div>
+                <div class="card-rating"><span>★</span> ${p.rating || 4.8}</div>
+              </div>
+
+              <h3 class="card-title">${escapeHtml(p.title)}</h3>
+              <div class="card-location">📍 ${escapeHtml(p.location)}</div>
+
+              <div class="card-specs">
+                <span>🛏️ ${escapeHtml(p.beds || "1 Bed")}</span>
+                <span>🚿 ${escapeHtml(p.bath || "Private Bath")}</span>
+                <span>📐 ${escapeHtml(p.size || "200 sq.ft")}</span>
+              </div>
+
+              <div class="card-amenities">
+                ${(p.amenities || []).slice(0, 3).map(a => `<span>${escapeHtml(a)}</span>`).join("")}
+                ${p.amenities && p.amenities.length > 3 ? `<span>+${p.amenities.length - 3} more</span>` : ""}
+              </div>
+
+              <div class="card-footer">
+                <button class="btn btn-outline btn-sm" onclick="openPropertyModal('${p.id}')">
+                  View Details
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="openPropertyModal('${p.id}', true)">
+                  Request Visit
+                </button>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    // Filter & Search Logic
+    function applyFilters() {
+      const q = (document.getElementById("searchLocation")?.value || "").trim().toLowerCase();
+      const type = document.getElementById("searchType")?.value || "";
+      const maxRent = Number(document.getElementById("searchBudget")?.value || 0);
+      const sortBy = document.getElementById("sortBy")?.value || "featured";
+
+      let filtered = allProperties.filter(p => {
+        const matchesQuery = !q || 
+          p.title.toLowerCase().includes(q) ||
+          p.location.toLowerCase().includes(q) ||
+          p.area.toLowerCase().includes(q) ||
+          (p.amenities || []).some(a => a.toLowerCase().includes(q));
+        
+        const matchesType = !type || p.type === type;
+        const matchesRent = !maxRent || p.price <= maxRent;
+
+        return matchesQuery && matchesType && matchesRent;
+      });
+
+      if (sortBy === "low") filtered.sort((a, b) => a.price - b.price);
+      else if (sortBy === "high") filtered.sort((a, b) => b.price - a.price);
+      else if (sortBy === "rating") filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+      else if (sortBy === "newest") filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      else filtered.sort((a, b) => Number(b.featured) - Number(a.featured) || (b.rating || 0) - (a.rating || 0));
+
+      renderProperties(filtered);
+    }
+
+    function resetAllFilters() {
+      if (document.getElementById("searchLocation")) document.getElementById("searchLocation").value = "";
+      if (document.getElementById("searchType")) document.getElementById("searchType").value = "";
+      if (document.getElementById("searchBudget")) document.getElementById("searchBudget").value = "";
+      if (document.getElementById("sortBy")) document.getElementById("sortBy").value = "featured";
+      renderProperties(allProperties);
+    }
+
+    // Modal Controller
+    function openPropertyModal(id, directToBooking = false) {
+      const p = allProperties.find(x => x.id === id);
+      if (!p) return;
+
+      currentSelectedProperty = p;
+      document.getElementById("modalTitle").textContent = p.title;
+      document.getElementById("modalImage").src = p.image;
+      document.getElementById("modalBadge").textContent = p.badge || "Verified";
+      document.getElementById("modalType").textContent = typeLabel(p.type);
+      document.getElementById("modalPrice").textContent = money(p.price);
+      document.getElementById("modalDeposit").textContent = money(p.deposit || p.price * 2);
+      document.getElementById("modalRating").innerHTML = `★ ${p.rating || 4.8}`;
+      document.getElementById("modalLocation").textContent = `📍 ${p.location}`;
+      document.getElementById("modalBeds").textContent = p.beds || "1 Bed";
+      document.getElementById("modalBath").textContent = p.bath || "Private Bath";
+      document.getElementById("modalSize").textContent = p.size || "200 sq.ft";
+      document.getElementById("modalDescription").textContent = p.description || "A well-maintained property with standard living conveniences.";
+      
+      const availEl = document.getElementById("modalAvailability");
+      availEl.textContent = p.availability ? p.availability.toUpperCase() : "AVAILABLE";
+      availEl.className = `badge badge-${p.availability === "booked" ? "booked" : p.availability === "unavailable" ? "unavailable" : "available"}`;
+
+      document.getElementById("modalAmenities").innerHTML = (p.amenities || []).map(a => `<span class="badge" style="background:#e2e8f0;color:#334155">${escapeHtml(a)}</span>`).join("");
+      
+      document.getElementById("modalBrokerName").textContent = p.brokerName || "Verified Broker";
+      document.getElementById("modalBrokerAgency").textContent = p.agencyName || "Ghar Bazaar Verified Partner";
+      document.getElementById("modalBrokerPhone").textContent = p.brokerPhone || "+91 98201 12345";
+
+      document.getElementById("bookingPropertyId").value = p.id;
+
+      // Auto-fill user phone if user is logged in
+      if (currentUser && currentUser.phone) {
+        document.getElementById("userPhone").value = currentUser.phone;
+      }
+
+      if (directToBooking) {
+        document.getElementById("requestType").value = "visit";
+      }
+
+      document.getElementById("propertyModal").classList.add("active");
+    }
+
+    function closePropertyModal() {
+      document.getElementById("propertyModal").classList.remove("active");
+    }
+
+    // Submit Booking / Visit Request
+    document.getElementById("bookingForm")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      
+      // Check authentication
+      if (!currentUser) {
+        showToast("Please log in to submit a booking or visit request.", "warning");
+        setTimeout(() => {
+          window.location.href = "/login.html";
+        }, 1000);
+        return;
+      }
+
+      const submitBtn = document.getElementById("submitBookingBtn");
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = "<span>Sending Request...</span>";
+
+      try {
+        const payload = {
+          propertyId: document.getElementById("bookingPropertyId").value,
+          requestType: document.getElementById("requestType").value,
+          requestedDate: document.getElementById("preferredDate").value,
+          userPhone: document.getElementById("userPhone").value,
+          message: document.getElementById("userMessage").value
+        };
+
+        const res = await api("/api/bookings", {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+
+        showToast(res.message || "Your request has been submitted to the broker!", "success");
+        closePropertyModal();
+        document.getElementById("bookingForm").reset();
+      } catch (err) {
+        showToast(err.message || "Failed to submit request.", "error");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = "<span>Submit Request to Broker</span>";
+      }
+    });
+
+    // Event Listeners
+    document.getElementById("searchBtn")?.addEventListener("click", applyFilters);
+    document.getElementById("sortBy")?.addEventListener("change", applyFilters);
+    document.getElementById("resetFiltersBtn")?.addEventListener("click", resetAllFilters);
+
+    // Filter Chips
+    document.querySelectorAll(".category-chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        const type = chip.dataset.type;
+        document.getElementById("searchType").value = type;
+        applyFilters();
+        document.getElementById("explore").scrollIntoView({ behavior: "smooth" });
+      });
+    });
+
+    // Close modal on outside click
+    document.getElementById("propertyModal")?.addEventListener("click", (e) => {
+      if (e.target.id === "propertyModal") closePropertyModal();
+    });
+
+    // Initial Load
+    document.addEventListener("DOMContentLoaded", () => {
+      loadProperties();
+    });
+  </script>
+</body>
+</html>

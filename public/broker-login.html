@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Broker Login | Ghar Bazaar</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Sticky Navbar -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="/" class="brand">
+        <div class="brand-icon">🏢</div>
+        <div>Ghar<span>Bazaar</span> <small style="font-size:12px;color:var(--muted);font-weight:600;margin-left:4px;">BROKER PORTAL</small></div>
+      </a>
+      <div>
+        <a href="/" class="btn btn-outline btn-sm">← Back to Home</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="auth-page">
+    <div class="auth-card">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <span class="badge badge-popular" style="margin-bottom: 8px;">BROKER & OWNER PORTAL</span>
+        <h2 style="font-size: 24px; font-weight: 800; color: var(--dark);">Broker Portal Login</h2>
+        <p style="color: var(--muted); font-size: 14px; margin-top: 4px;">Sign in to manage your rental listings and renter booking requests.</p>
+      </div>
+
+      <!-- Quick Viva Demo Login Button -->
+      <button type="button" class="btn btn-outline btn-block" style="margin-bottom: 16px; border-color: var(--secondary); color: var(--secondary-hover); font-weight: 700;" onclick="fillDemoBrokerCredentials()">
+        ⚡ Quick Fill Demo Broker (Rajesh Sharma)
+      </button>
+
+      <form id="brokerLoginForm">
+        <div class="form-group">
+          <label for="brokerEmail">Broker Registered Email</label>
+          <input type="email" id="brokerEmail" class="form-control" placeholder="broker@agency.com" required autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label for="brokerPassword">Password</label>
+          <input type="password" id="brokerPassword" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+
+        <div id="brokerMessage" style="font-size: 13px; color: var(--danger); margin-bottom: 12px; min-height: 18px;"></div>
+
+        <button type="submit" class="btn btn-primary btn-block btn-lg" id="brokerSubmitBtn">
+          <span>Log In to Broker Portal</span>
+        </button>
+      </form>
+
+      <div style="background: var(--bg-main); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px; margin-top: 20px; font-size: 12px; color: var(--muted);">
+        <strong>Demo Broker Credentials for Viva:</strong><br>
+        Email: <code>rajesh.broker@gharbazaar.com</code><br>
+        Password: <code>Broker@123</code>
+      </div>
+
+      <div style="text-align: center; margin-top: 20px; font-size: 13.5px; color: var(--muted);">
+        New broker? <a href="/broker-signup.html" style="color: var(--primary); font-weight: 700;">Register as Broker</a>
+      </div>
+
+      <div style="text-align: center; margin-top: 10px; font-size: 13px;">
+        <a href="/login.html" style="color: var(--muted);">Switch to Renter Login</a>
+      </div>
+    </div>
+  </main>
+
+  <script src="main.js"></script>
+  <script>
+    function fillDemoBrokerCredentials() {
+      document.getElementById("brokerEmail").value = "rajesh.broker@gharbazaar.com";
+      document.getElementById("brokerPassword").value = "Broker@123";
+      showToast("Filled demo broker credentials.", "success");
+    }
+
+    document.getElementById("brokerLoginForm")?.addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const msg = document.getElementById("brokerMessage");
+      msg.textContent = "";
+
+      const email = document.getElementById("brokerEmail").value.trim();
+      const password = document.getElementById("brokerPassword").value;
+      const btn = document.getElementById("brokerSubmitBtn");
+
+      btn.disabled = true;
+      btn.innerHTML = "<span>Authenticating...</span>";
+
+      try {
+        const res = await api("/api/auth/login", {
+          method: "POST",
+          body: JSON.stringify({ email, password })
+        });
+
+        if (res.user.role !== "broker" && res.user.role !== "admin") {
+          throw new Error("This account is registered as a Renter. Please use the Renter login.");
+        }
+
+        showToast("Logged in to Broker Portal!", "success");
+        setTimeout(() => {
+          window.location.href = "/broker-dashboard.html";
+        }, 600);
+      } catch (err) {
+        btn.disabled = false;
+        btn.innerHTML = "<span>Log In to Broker Portal</span>";
+
+        if (err.needsVerification) {
+          showToast("Email verification required. Redirecting...", "warning");
+          setTimeout(() => {
+            window.location.href = `/verify-email.html?email=${encodeURIComponent(err.email)}`;
+          }, 1000);
+          return;
+        }
+
+        msg.textContent = err.message || "Invalid credentials.";
+      }
+    });
+  </script>
+</body>
+</html>

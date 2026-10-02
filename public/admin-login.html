@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login | Ghar Bazaar</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Sticky Navbar -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="/" class="brand">
+        <div class="brand-icon">🛠️</div>
+        <div>Ghar<span>Bazaar</span> <small style="font-size:12px;color:var(--muted);font-weight:600;margin-left:4px;">ADMIN PORTAL</small></div>
+      </a>
+      <div>
+        <a href="/" class="btn btn-outline btn-sm">← Back to Home</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="auth-page">
+    <div class="auth-card">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <span class="badge" style="background:#fee2e2;color:#991b1b;margin-bottom:8px;">INTERNAL MANAGEMENT</span>
+        <h2 style="font-size: 24px; font-weight: 800; color: var(--dark);">Administrator Login</h2>
+        <p style="color: var(--muted); font-size: 14px; margin-top: 4px;">Sign in to view platform analytics, users, brokers, and deals.</p>
+      </div>
+
+      <button type="button" class="btn btn-outline btn-block" style="margin-bottom: 16px; border-color: #dc2626; color: #dc2626; font-weight: 700;" onclick="fillDemoAdminCredentials()">
+        ⚡ Quick Fill Admin Credentials (Viva Demo)
+      </button>
+
+      <form id="adminLoginForm">
+        <div class="form-group">
+          <label for="adminEmail">Admin Email</label>
+          <input type="email" id="adminEmail" class="form-control" placeholder="admin@gharbazaar.com" required autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label for="adminPassword">Password</label>
+          <input type="password" id="adminPassword" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+
+        <div id="adminMessage" style="font-size: 13px; color: var(--danger); margin-bottom: 12px; min-height: 18px;"></div>
+
+        <button type="submit" class="btn btn-dark btn-block btn-lg" id="adminSubmitBtn">
+          <span>Authenticate as Administrator</span>
+        </button>
+      </form>
+
+      <div style="background: var(--bg-main); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px; margin-top: 20px; font-size: 12px; color: var(--muted);">
+        <strong>Demo Admin Credentials:</strong><br>
+        Email: <code>admin@gharbazaar.com</code><br>
+        Password: <code>Admin@123</code>
+      </div>
+    </div>
+  </main>
+
+  <script src="main.js"></script>
+  <script>
+    function fillDemoAdminCredentials() {
+      document.getElementById("adminEmail").value = "admin@gharbazaar.com";
+      document.getElementById("adminPassword").value = "Admin@123";
+      showToast("Filled demo admin credentials.", "success");
+    }
+
+    document.getElementById("adminLoginForm")?.addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const msg = document.getElementById("adminMessage");
+      msg.textContent = "";
+
+      const email = document.getElementById("adminEmail").value.trim();
+      const password = document.getElementById("adminPassword").value;
+      const btn = document.getElementById("adminSubmitBtn");
+
+      btn.disabled = true;
+      btn.innerHTML = "<span>Verifying access...</span>";
+
+      try {
+        const res = await api("/api/auth/admin-login", {
+          method: "POST",
+          body: JSON.stringify({ email, password })
+        });
+
+        showToast("Admin access verified!", "success");
+        setTimeout(() => {
+          window.location.href = "/admin.html";
+        }, 600);
+      } catch (err) {
+        btn.disabled = false;
+        btn.innerHTML = "<span>Authenticate as Administrator</span>";
+        msg.textContent = err.message || "Invalid admin credentials.";
+      }
+    });
+  </script>
+</body>
+</html>

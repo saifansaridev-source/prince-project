@@ -1,0 +1,22 @@
+Ghar Bazaar - PREMIUM V2
+
+NEW FEATURES
+1. 12 seeded room listings.
+2. Dynamic room cards.
+3. Search by area/title/amenities.
+4. Filter by property type and maximum budget.
+5. Sort by featured, price and rating.
+6. Favourite rooms using localStorage.
+7. Compare up to 3 rooms.
+8. Full room-details modal.
+9. WhatsApp inquiry from room cards and details.
+10. Request-visit action.
+11. Responsive mobile navigation.
+12. Premium hero, stats, service cards and process section.
+13. Admin room management: add, edit and delete.
+14. Admin inventory search.
+15. Admin statistics: total, verified, featured and average rent.
+16. New rooms are stored in localStorage and immediately appear on the website in the same browser.
+
+IMPORTANT
+This is a frontend/college-project implementation. For a real production system, room data and authentication should be stored and validated on the server/database rather than localStorage/client-side JavaScript.

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Renter Dashboard | Ghar Bazaar</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Sticky Navbar -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="/" class="brand">
+        <div class="brand-icon">🏠</div>
+        <div>Ghar<span>Bazaar</span></div>
+      </a>
+
+      <div class="nav-auth-group" id="navAuth">
+        <!-- Rendered by main.js -->
+      </div>
+    </div>
+  </header>
+
+  <main class="container" style="padding-top: 36px; padding-bottom: 60px;">
+    <!-- Welcome Header -->
+    <div style="background: white; border-radius: var(--radius-xl); padding: 28px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+      <div>
+        <span class="badge badge-verified" style="margin-bottom: 8px;">RENTER PORTAL</span>
+        <h1 style="font-size: 26px; font-weight: 800;" id="userName">Welcome Renter</h1>
+        <p style="color: var(--muted); font-size: 14px;" id="userEmail">renter@email.com</p>
+      </div>
+
+      <div style="display: flex; gap: 12px;">
+        <a href="/" class="btn btn-primary">
+          <span>🔍 Explore More Stays</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="auth-tabs" style="max-width: 480px; margin-bottom: 24px;">
+      <button class="auth-tab active" id="tabBookingsBtn" onclick="switchTab('bookings')">
+        📋 My Requests (<span id="bookingsCount">0</span>)
+      </button>
+      <button class="auth-tab" id="tabFavsBtn" onclick="switchTab('favs')">
+        ♥ Saved Favourites (<span id="favsCount">0</span>)
+      </button>
+    </div>
+
+    <!-- Tab 1: Bookings & Visit Requests -->
+    <div id="tabBookings">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th>Type</th>
+              <th>Preferred Date</th>
+              <th>Monthly Rent</th>
+              <th>Status</th>
+              <th>2% Brokerage Fee</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="bookingsTableBody">
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 30px;">Loading your requests...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="empty-box" id="emptyBookings" style="display: none; margin-top: 20px;">
+        <div class="empty-box-icon">📋</div>
+        <h4>No booking or visit requests yet</h4>
+        <p>You haven't requested any room visits or bookings. Explore properties and submit your first request!</p>
+        <a href="/" class="btn btn-primary">Browse Properties →</a>
+      </div>
+    </div>
+
+    <!-- Tab 2: Saved Favourites -->
+    <div id="tabFavs" style="display: none;">
+      <div class="property-grid" id="favsGrid">
+        <!-- Rendered by JavaScript -->
+      </div>
+
+      <div class="empty-box" id="emptyFavs" style="display: none;">
+        <div class="empty-box-icon">♡</div>
+        <h4>No saved favourites</h4>
+        <p>You haven't added any properties to your favourites list yet. Click the heart icon on any card to save it.</p>
+        <a href="/" class="btn btn-primary">Discover Stays →</a>
+      </div>
+    </div>
+  </main>
+
+  <script src="main.js"></script>
+  <script>
+    let myBookings = [];
+    let allProperties = [];
+
+    async function initUserDashboard() {
+      const user = await checkAuthStatus();
+      if (!user) {
+        showToast("Please log in to view your dashboard.", "warning");
+        setTimeout(() => window.location.href = "/login.html", 800);
+        return;
+      }
+
+      document.getElementById("userName").textContent = `Welcome back, ${user.name}!`;
+      document.getElementById("userEmail").textContent = `Logged in as: ${user.email} ${user.phone ? "• " + user.phone : ""}`;
+
+      loadUserBookings();
+      loadUserFavorites();
+    }
+
+    async function loadUserBookings() {
+      try {
+        const bookings = await api("/api/bookings/my");
+        myBookings = bookings;
+        document.getElementById("bookingsCount").textContent = bookings.length;
+        renderBookings(bookings);
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    function renderBookings(list) {
+      const tbody = document.getElementById("bookingsTableBody");
+      const empty = document.getElementById("emptyBookings");
+
+      if (list.length === 0) {
+        tbody.innerHTML = "";
+        empty.style.display = "block";
+        return;
+      }
+
+      empty.style.display = "none";
+      tbody.innerHTML = list.map(b => {
+        let statusBadge = "status-pending";
+        if (b.status === "accepted") statusBadge = "status-accepted";
+        if (b.status === "completed") statusBadge = "status-completed";
+        if (b.status === "rejected") statusBadge = "status-rejected";
+
+        const brokerageNote = b.status === "completed"
+          ? `<strong style="color:var(--primary)">${money(b.brokerageAmount)}</strong> <small>(2% recorded)</small>`
+          : `<span style="color:var(--muted)">Pending deal completion</span>`;
+
+        return `
+          <tr>
+            <td>
+              <strong style="color:var(--dark); font-size:14.5px;">${escapeHtml(b.propertyTitle)}</strong>
+              <div style="font-size:12px; color:var(--muted)">ID: ${escapeHtml(b.id)} • 📍 ${escapeHtml(b.propertyLocation || "Mumbai")}</div>
+            </td>
+            <td>
+              <span class="badge ${b.requestType === 'visit' ? 'badge-new' : 'badge-popular'}">
+                ${b.requestType === 'visit' ? 'In-Person Visit' : 'Booking Request'}
+              </span>
+            </td>
+            <td><strong>${escapeHtml(b.requestedDate || "Flexible")}</strong></td>
+            <td><strong>${money(b.propertyPrice)}</strong></td>
+            <td>
+              <span class="status-pill ${statusBadge}">
+                ${b.status.toUpperCase()}
+              </span>
+            </td>
+            <td>${brokerageNote}</td>
+            <td>
+              <a href="/property.html?id=${b.propertyId}" class="btn btn-outline btn-sm">
+                View Property
+              </a>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    async function loadUserFavorites() {
+      const favIds = getFavorites();
+      document.getElementById("favsCount").textContent = favIds.length;
+
+      try {
+        const properties = await api("/api/properties");
+        allProperties = properties;
+        const favProperties = properties.filter(p => favIds.includes(p.id));
+        renderFavorites(favProperties);
+      } catch (err) {
+        console.error("Fav load error:", err);
+      }
+    }
+
+    function renderFavorites(list) {
+      const grid = document.getElementById("favsGrid");
+      const empty = document.getElementById("emptyFavs");
+
+      if (list.length === 0) {
+        grid.innerHTML = "";
+        empty.style.display = "block";
+        return;
+      }
+
+      empty.style.display = "none";
+      grid.innerHTML = list.map(p => `
+        <article class="property-card">
+          <div class="card-img-wrap">
+            <img src="${p.image}" class="card-img" alt="${escapeHtml(p.title)}">
+            <span class="badge badge-verified card-badge">${escapeHtml(p.badge || "Verified")}</span>
+            <button class="card-fav-btn active" onclick="removeFav('${p.id}')" title="Remove from Favourites">♥</button>
+            <div class="card-type-tag">${typeLabel(p.type)}</div>
+          </div>
+          <div class="card-body">
+            <div class="card-price-row">
+              <div class="card-price">${money(p.price)} <small>/ mo</small></div>
+              <div class="card-rating"><span>★</span> ${p.rating || 4.8}</div>
+            </div>
+            <h3 class="card-title">${escapeHtml(p.title)}</h3>
+            <div class="card-location">📍 ${escapeHtml(p.location)}</div>
+            <div class="card-footer">
+              <a href="/property.html?id=${p.id}" class="btn btn-outline btn-sm">View Details</a>
+              <a href="/property.html?id=${p.id}" class="btn btn-primary btn-sm">Request Visit</a>
+            </div>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function removeFav(id) {
+      toggleFavorite(id);
+      loadUserFavorites();
+    }
+
+    function switchTab(tab) {
+      if (tab === "bookings") {
+        document.getElementById("tabBookingsBtn").classList.add("active");
+        document.getElementById("tabFavsBtn").classList.remove("active");
+        document.getElementById("tabBookings").style.display = "block";
+        document.getElementById("tabFavs").style.display = "none";
+      } else {
+        document.getElementById("tabBookingsBtn").classList.remove("active");
+        document.getElementById("tabFavsBtn").classList.add("active");
+        document.getElementById("tabBookings").style.display = "none";
+        document.getElementById("tabFavs").style.display = "block";
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      initUserDashboard();
+    });
+  </script>
+</body>
+</html>

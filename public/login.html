@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | Ghar Bazaar</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+
+  <!-- Sticky Navbar -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="/" class="brand">
+        <div class="brand-icon">🏠</div>
+        <div>Ghar<span>Bazaar</span></div>
+      </a>
+      <div>
+        <a href="/" class="btn btn-outline btn-sm">← Back to Home</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="auth-page">
+    <div class="auth-card">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h2 style="font-size: 24px; font-weight: 800; color: var(--dark);">Welcome to Ghar Bazaar</h2>
+        <p style="color: var(--muted); font-size: 14px; margin-top: 4px;">Log in to access your rental dashboard.</p>
+      </div>
+
+      <!-- Role Tabs -->
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabRenter" onclick="switchLoginRole('user')">
+          👤 Renter
+        </button>
+        <button class="auth-tab" id="tabBroker" onclick="switchLoginRole('broker')">
+          🏢 Broker / Owner
+        </button>
+      </div>
+
+      <!-- Google Sign-In Section -->
+      <div id="googleButtonContainer" style="margin-bottom: 14px; min-height: 44px; display: flex; justify-content: center;"></div>
+      
+      <!-- Viva 1-Click Google Demo Button -->
+      <button type="button" class="btn-google" id="demoGoogleBtn" onclick="handleDemoGoogleLogin()">
+        <svg width="18" height="18" viewBox="0 0 48 48">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+        <span id="googleBtnText">Continue with Google</span>
+      </button>
+
+      <div class="auth-divider">
+        <span>or sign in with email</span>
+      </div>
+
+      <!-- Login Form -->
+      <form id="loginForm">
+        <input type="hidden" id="loginRole" value="user">
+
+        <div class="form-group">
+          <label for="loginEmail">Email Address</label>
+          <input type="email" id="loginEmail" class="form-control" placeholder="name@example.com" required autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+
+        <div id="loginMessage" style="font-size: 13px; color: var(--danger); margin-bottom: 12px; min-height: 18px;"></div>
+
+        <button type="submit" class="btn btn-primary btn-block btn-lg" id="loginSubmitBtn">
+          <span>Log In</span>
+        </button>
+      </form>
+
+      <!-- Quick Demo Credentials Hint for Viva -->
+      <div style="background: var(--bg-main); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px; margin-top: 20px; font-size: 12px; color: var(--muted);">
+        <strong>Demo Accounts for Viva:</strong><br>
+        • Broker: <code>rajesh.broker@gharbazaar.com</code> / <code>Broker@123</code><br>
+        • Renter: <code>rahul.renter@gmail.com</code> / <code>User@123</code>
+      </div>
+
+      <div style="text-align: center; margin-top: 20px; font-size: 13.5px; color: var(--muted);">
+        Don't have an account? <a href="/signup.html" style="color: var(--primary); font-weight: 700;">Sign Up</a>
+      </div>
+
+      <div style="text-align: center; margin-top: 14px; font-size: 12.5px;">
+        <a href="/admin-login.html" style="color: var(--muted); text-decoration: underline;">Administrator Access</a>
+      </div>
+    </div>
+  </main>
+
+  <script src="main.js"></script>
+  <script>
+    let activeRole = "user";
+
+    // Switch Role Tabs
+    function switchLoginRole(role) {
+      activeRole = role;
+      document.getElementById("loginRole").value = role;
+
+      if (role === "user") {
+        document.getElementById("tabRenter").classList.add("active");
+        document.getElementById("tabBroker").classList.remove("active");
+      } else {
+        document.getElementById("tabRenter").classList.remove("active");
+        document.getElementById("tabBroker").classList.add("active");
+      }
+    }
+
+    // Google Sign-In Init
+    async function initGoogleAuth() {
+      try {
+        const config = await api("/api/auth/google-client-id");
+        if (config.configured && window.google) {
+          google.accounts.id.initialize({
+            client_id: config.clientId,
+            callback: handleGoogleCredentialResponse
+          });
+          google.accounts.id.renderButton(
+            document.getElementById("googleButtonContainer"),
+            { theme: "outline", size: "large", width: "100%" }
+          );
+          // Hide demo button if real google button is active
+          document.getElementById("demoGoogleBtn").style.display = "none";
+        }
+      } catch (err) {
+        console.log("Google Client ID not configured in .env, using demo viva sign-in option.");
+      }
+    }
+
+    async function handleGoogleCredentialResponse(response) {
+      try {
+        const res = await api("/api/auth/google", {
+          method: "POST",
+          body: JSON.stringify({
+            credential: response.credential,
+            requestedRole: activeRole
+          })
+        });
+
+        showToast("Logged in with Google successfully!", "success");
+        redirectUser(res.user);
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    // Viva 1-Click Demo Google Sign-In
+    async function handleDemoGoogleLogin() {
+      const demoEmail = activeRole === "broker" ? "demo.broker.google@gharbazaar.com" : "demo.renter.google@gmail.com";
+      const demoName = activeRole === "broker" ? "Google Demo Broker" : "Google Demo Renter";
+
+      try {
+        const res = await api("/api/auth/google", {
+          method: "POST",
+          body: JSON.stringify({
+            demoUser: true,
+            email: demoEmail,
+            name: demoName,
+            requestedRole: activeRole
+          })
+        });
+
+        showToast(`Signed in as ${demoName} via Google!`, "success");
+        redirectUser(res.user);
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    // Standard Form Login
+    document.getElementById("loginForm")?.addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const msg = document.getElementById("loginMessage");
+      msg.textContent = "";
+
+      const emailInput = document.getElementById("loginEmail");
+      const passwordInput = document.getElementById("loginPassword");
+      const submitBtn = document.getElementById("loginSubmitBtn");
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = "<span>Authenticating...</span>";
+
+      try {
+        const res = await api("/api/auth/login", {
+          method: "POST",
+          body: JSON.stringify({
+            email: emailInput.value.trim(),
+            password: passwordInput.value
+          })
+        });
+
+        showToast(res.message || "Logged in successfully!", "success");
+        redirectUser(res.user);
+      } catch (err) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = "<span>Log In</span>";
+
+        if (err.needsVerification) {
+          showToast("Email verification required. Redirecting...", "warning");
+          setTimeout(() => {
+            window.location.href = `/verify-email.html?email=${encodeURIComponent(err.email)}`;
+          }, 1000);
+          return;
+        }
+
+        msg.textContent = err.message || "Invalid credentials.";
+      }
+    });
+
+    function redirectUser(user) {
+      setTimeout(() => {
+        if (user.role === "broker") {
+          window.location.href = "/broker-dashboard.html";
+        } else if (user.role === "admin") {
+          window.location.href = "/admin.html";
+        } else {
+          window.location.href = "/user-dashboard.html";
+        }
+      }, 700);
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // Check query param for role
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("role") === "broker") {
+        switchLoginRole("broker");
+      }
+      setTimeout(initGoogleAuth, 500);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Broker Registration | Ghar Bazaar</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Sticky Navbar -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="/" class="brand">
+        <div class="brand-icon">🏢</div>
+        <div>Ghar<span>Bazaar</span> <small style="font-size:12px;color:var(--muted);font-weight:600;margin-left:4px;">BROKER PORTAL</small></div>
+      </a>
+      <div>
+        <a href="/" class="btn btn-outline btn-sm">← Back to Home</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="auth-page">
+    <div class="auth-card" style="max-width: 480px;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <span class="badge badge-popular" style="margin-bottom: 8px;">PARTNER NETWORK</span>
+        <h2 style="font-size: 24px; font-weight: 800; color: var(--dark);">Register as a Broker</h2>
+        <p style="color: var(--muted); font-size: 14px; margin-top: 4px;">List rental properties, manage listings, and receive verified tenant visit requests.</p>
+      </div>
+
+      <form id="brokerSignupForm">
+        <div class="form-group">
+          <label for="bName">Full Name *</label>
+          <input type="text" id="bName" class="form-control" placeholder="Rajesh Sharma" required autocomplete="name">
+        </div>
+
+        <div class="form-group">
+          <label for="bEmail">Official / Business Email *</label>
+          <input type="email" id="bEmail" class="form-control" placeholder="rajesh@apexrealty.com" required autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label for="bPhone">Contact Phone Number *</label>
+          <input type="tel" id="bPhone" class="form-control" placeholder="+91 98201 12345" required autocomplete="tel">
+        </div>
+
+        <div class="form-group">
+          <label for="bAgency">Real Estate Agency / Business Name (Optional)</label>
+          <input type="text" id="bAgency" class="form-control" placeholder="e.g. Apex Realty Mumbai">
+        </div>
+
+        <div class="form-group">
+          <label for="bPassword">Password (Min. 6 Characters) *</label>
+          <input type="password" id="bPassword" class="form-control" placeholder="Create a strong password" minlength="6" required autocomplete="new-password">
+        </div>
+
+        <div id="bMessage" style="font-size: 13px; color: var(--danger); margin-bottom: 12px; min-height: 18px;"></div>
+
+        <button type="submit" class="btn btn-primary btn-block btn-lg" id="bSubmitBtn">
+          <span>Create Broker Account</span>
+        </button>
+      </form>
+
+      <div style="text-align: center; margin-top: 20px; font-size: 13.5px; color: var(--muted);">
+        Already have a broker account? <a href="/broker-login.html" style="color: var(--primary); font-weight: 700;">Broker Login</a>
+      </div>
+
+      <div style="text-align: center; margin-top: 10px; font-size: 13px;">
+        <a href="/signup.html" style="color: var(--muted);">Switch to Renter Registration</a>
+      </div>
+    </div>
+  </main>
+
+  <script src="main.js"></script>
+  <script>
+    document.getElementById("brokerSignupForm")?.addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const msg = document.getElementById("bMessage");
+      msg.textContent = "";
+
+      const name = document.getElementById("bName").value.trim();
+      const email = document.getElementById("bEmail").value.trim();
+      const phone = document.getElementById("bPhone").value.trim();
+      const agencyName = document.getElementById("bAgency").value.trim();
+      const password = document.getElementById("bPassword").value;
+
+      const btn = document.getElementById("bSubmitBtn");
+      btn.disabled = true;
+      btn.innerHTML = "<span>Registering Broker...</span>";
+
+      try {
+        const res = await api("/api/auth/signup", {
+          method: "POST",
+          body: JSON.stringify({
+            name,
+            email,
+            phone,
+            agencyName,
+            password,
+            role: "broker"
+          })
+        });
+
+        showToast("Broker account created! Please verify your email.", "success");
+        setTimeout(() => {
+          window.location.href = `/verify-email.html?email=${encodeURIComponent(res.email)}`;
+        }, 1000);
+      } catch (err) {
+        btn.disabled = false;
+        btn.innerHTML = "<span>Create Broker Account</span>";
+        msg.textContent = err.message || "Failed to register broker.";
+      }
+    });
+  </script>
+</body>
+</html>

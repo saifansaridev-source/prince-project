@@ -1,0 +1,5 @@
+Admin Login
+Email: admin@Ghar Bazaar.com
+Password: Admin@123
+
+Admin access is verified by the Express backend session. Do not put real passwords in frontend JavaScript.

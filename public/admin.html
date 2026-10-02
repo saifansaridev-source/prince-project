@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | Ghar Bazaar</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Sticky Navbar -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="/" class="brand">
+        <div class="brand-icon">🛠️</div>
+        <div>Ghar<span>Bazaar</span> <small style="font-size:12px;color:var(--muted);font-weight:600;margin-left:4px;">ADMIN CONSOLE</small></div>
+      </a>
+
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <a href="/" class="btn btn-outline btn-sm">↗ View Public Website</a>
+        <button onclick="handleLogout()" class="btn btn-outline btn-sm" style="color: var(--danger);">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container" style="padding-top: 36px; padding-bottom: 60px;">
+    <!-- Welcome Header -->
+    <div style="background: var(--dark); color: white; border-radius: var(--radius-xl); padding: 30px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+      <div>
+        <span class="badge" style="background: rgba(255,255,255,0.15); color: #fef3c7; margin-bottom: 8px;">INTERNAL MANAGEMENT PORTAL</span>
+        <h1 style="font-size: 26px; font-weight: 800;">Platform Administration</h1>
+        <p style="color: #94a3b8; font-size: 14px; margin-top: 4px;">Monitor platform transactions, 2% recorded brokerage ledger, brokers, and listings.</p>
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <button class="btn btn-secondary btn-sm" onclick="refreshAllAdminData()">🔄 Refresh Platform Stats</button>
+      </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-icon green">👥</div>
+        <div class="stat-info">
+          <small>Total Renters</small>
+          <strong id="statRenters">0</strong>
+        </div>
+      </div>
+
+      <div class="stat-box">
+        <div class="stat-icon gold">🏢</div>
+        <div class="stat-info">
+          <small>Total Brokers</small>
+          <strong id="statBrokers">0</strong>
+        </div>
+      </div>
+
+      <div class="stat-box">
+        <div class="stat-icon blue">🏠</div>
+        <div class="stat-info">
+          <small>Active Listings</small>
+          <strong id="statProps">0</strong>
+        </div>
+      </div>
+
+      <div class="stat-box">
+        <div class="stat-icon purple">📋</div>
+        <div class="stat-info">
+          <small>Total Inquiries</small>
+          <strong id="statBookings">0</strong>
+        </div>
+      </div>
+
+      <div class="stat-box">
+        <div class="stat-icon green">🤝</div>
+        <div class="stat-info">
+          <small>Completed Deals</small>
+          <strong id="statCompleted">0</strong>
+        </div>
+      </div>
+
+      <div class="stat-box">
+        <div class="stat-icon gold">₹</div>
+        <div class="stat-info">
+          <small>2% Brokerage Recorded</small>
+          <strong id="statBrokerage" style="color: var(--primary);">₹0</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="auth-tabs" style="max-width: 720px; margin-bottom: 24px;">
+      <button class="auth-tab active" id="tabPropsBtn" onclick="switchAdminTab('props')">
+        🏡 All Properties (<span id="countPropsTab">0</span>)
+      </button>
+      <button class="auth-tab" id="tabDealsBtn" onclick="switchAdminTab('deals')">
+        💰 Brokerage Ledger (<span id="countDealsTab">0</span>)
+      </button>
+      <button class="auth-tab" id="tabBrokersBtn" onclick="switchAdminTab('brokers')">
+        🏢 Brokers (<span id="countBrokersTab">0</span>)
+      </button>
+      <button class="auth-tab" id="tabUsersBtn" onclick="switchAdminTab('users')">
+        👤 Renters (<span id="countUsersTab">0</span>)
+      </button>
+    </div>
+
+    <!-- Tab 1: All Properties -->
+    <div id="tabProps">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+        <input type="text" id="propSearchInput" class="form-control" placeholder="Search properties by title, area, or broker..." style="max-width: 360px;" oninput="filterAdminProperties()">
+        <span style="font-size: 13px; color: var(--muted);" id="propSearchMeta">Showing listings</span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th>Location</th>
+              <th>Type</th>
+              <th>Monthly Rent</th>
+              <th>Broker / Agency</th>
+              <th>Status</th>
+              <th>Management</th>
+            </tr>
+          </thead>
+          <tbody id="adminPropsTable">
+            <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading listings...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab 2: Deals & 2% Brokerage Ledger -->
+    <div id="tabDeals" style="display: none;">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Deal ID</th>
+              <th>Property Title</th>
+              <th>Renter</th>
+              <th>Request Type</th>
+              <th>Status</th>
+              <th>Deal Rent Amount</th>
+              <th>2% Brokerage Recorded</th>
+            </tr>
+          </thead>
+          <tbody id="adminDealsTable">
+            <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading transactions...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab 3: Brokers Directory -->
+    <div id="tabBrokers" style="display: none;">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Broker Name</th>
+              <th>Agency / Business</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Verification</th>
+              <th>Registered At</th>
+            </tr>
+          </thead>
+          <tbody id="adminBrokersTable">
+            <tr><td colspan="6" style="text-align: center; padding: 24px;">Loading brokers...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab 4: Renters Directory -->
+    <div id="tabUsers" style="display: none;">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Renter Name</th>
+              <th>Email Address</th>
+              <th>Phone</th>
+              <th>Email Verified</th>
+              <th>Registered At</th>
+            </tr>
+          </thead>
+          <tbody id="adminUsersTable">
+            <tr><td colspan="5" style="text-align: center; padding: 24px;">Loading renters...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script src="main.js"></script>
+  <script>
+    let adminProps = [];
+    let adminBookings = [];
+    let adminBrokers = [];
+    let adminUsers = [];
+
+    async function initAdminDashboard() {
+      const user = await checkAuthStatus();
+      if (!user || user.role !== "admin") {
+        showToast("Administrator authentication required.", "error");
+        setTimeout(() => window.location.href = "/admin-login.html", 800);
+        return;
+      }
+
+      await refreshAllAdminData();
+    }
+
+    async function refreshAllAdminData() {
+      try {
+        const stats = await api("/api/admin/stats");
+        document.getElementById("statRenters").textContent = stats.users;
+        document.getElementById("statBrokers").textContent = stats.brokers;
+        document.getElementById("statProps").textContent = stats.properties;
+        document.getElementById("statBookings").textContent = stats.bookings;
+        document.getElementById("statCompleted").textContent = stats.completedDeals;
+        document.getElementById("statBrokerage").textContent = money(stats.totalBrokerage);
+
+        // Fetch collections in parallel
+        const [props, bookings, brokers, users] = await Promise.all([
+          api("/api/admin/properties"),
+          api("/api/admin/bookings"),
+          api("/api/admin/brokers"),
+          api("/api/admin/users")
+        ]);
+
+        adminProps = props;
+        adminBookings = bookings;
+        adminBrokers = brokers;
+        adminUsers = users;
+
+        document.getElementById("countPropsTab").textContent = props.length;
+        document.getElementById("countDealsTab").textContent = bookings.length;
+        document.getElementById("countBrokersTab").textContent = brokers.length;
+        document.getElementById("countUsersTab").textContent = users.length;
+
+        renderAdminProperties(props);
+        renderAdminDeals(bookings);
+        renderAdminBrokers(brokers);
+        renderAdminUsers(users);
+
+        showToast("Platform data synchronized.", "success");
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    function renderAdminProperties(list) {
+      const tbody = document.getElementById("adminPropsTable");
+      document.getElementById("propSearchMeta").textContent = `Showing ${list.length} listings`;
+
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;">No properties found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = list.map(p => `
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <img src="${p.image}" alt="" style="width:44px;height:44px;border-radius:6px;object-fit:cover;">
+              <div>
+                <strong>${escapeHtml(p.title)}</strong>
+                <div style="font-size:11px;color:var(--muted)">${p.id}</div>
+              </div>
+            </div>
+          </td>
+          <td>📍 ${escapeHtml(p.location)}</td>
+          <td><span class="badge" style="background:#e2e8f0;color:#334155;">${typeLabel(p.type)}</span></td>
+          <td><strong>${money(p.price)}</strong></td>
+          <td>
+            <strong>${escapeHtml(p.brokerName || "Broker")}</strong>
+            <div style="font-size:11px;color:var(--muted);">${escapeHtml(p.agencyName || "Independent")}</div>
+          </td>
+          <td>
+            <span class="badge badge-${p.availability === 'booked' ? 'booked' : p.availability === 'unavailable' ? 'unavailable' : 'available'}">
+              ${p.availability.toUpperCase()}
+            </span>
+          </td>
+          <td>
+            <button class="btn btn-outline btn-sm" style="color:var(--danger);" onclick="adminDeleteProperty('${p.id}')">
+              Remove Listing
+            </button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function filterAdminProperties() {
+      const q = (document.getElementById("propSearchInput")?.value || "").toLowerCase().trim();
+      const filtered = adminProps.filter(p => 
+        p.title.toLowerCase().includes(q) ||
+        p.location.toLowerCase().includes(q) ||
+        (p.brokerName || "").toLowerCase().includes(q) ||
+        (p.agencyName || "").toLowerCase().includes(q)
+      );
+      renderAdminProperties(filtered);
+    }
+
+    async function adminDeleteProperty(id) {
+      if (!confirm("Admin Action: Remove this listing permanently from the marketplace?")) return;
+      try {
+        await api(`/api/properties/${id}`, { method: "DELETE" });
+        showToast("Listing removed by administrator.", "success");
+        await refreshAllAdminData();
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    function renderAdminDeals(list) {
+      const tbody = document.getElementById("adminDealsTable");
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;">No platform transactions recorded yet.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = list.map(b => {
+        let statusBadge = "status-pending";
+        if (b.status === "accepted") statusBadge = "status-accepted";
+        if (b.status === "completed") statusBadge = "status-completed";
+        if (b.status === "rejected") statusBadge = "status-rejected";
+
+        const brokerageCol = b.status === "completed"
+          ? `<strong style="color:var(--primary); font-size:15px;">${money(b.brokerageAmount)}</strong> <span class="badge badge-verified" style="font-size:10px;margin-left:4px;">2% RECORDED</span>`
+          : `<span style="color:var(--muted)">Pending completion</span>`;
+
+        return `
+          <tr>
+            <td><code>${b.id}</code></td>
+            <td><strong>${escapeHtml(b.propertyTitle)}</strong></td>
+            <td>
+              <div>${escapeHtml(b.userName)}</div>
+              <small style="color:var(--muted)">${escapeHtml(b.userEmail)}</small>
+            </td>
+            <td>
+              <span class="badge ${b.requestType === 'visit' ? 'badge-new' : 'badge-popular'}">
+                ${b.requestType === 'visit' ? 'Visit' : 'Booking'}
+              </span>
+            </td>
+            <td>
+              <span class="status-pill ${statusBadge}">
+                ${b.status.toUpperCase()}
+              </span>
+            </td>
+            <td><strong>${money(b.agreedAmount || b.propertyPrice)}</strong></td>
+            <td>${brokerageCol}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function renderAdminBrokers(list) {
+      const tbody = document.getElementById("adminBrokersTable");
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;">No registered brokers.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = list.map(b => `
+        <tr>
+          <td><strong>${escapeHtml(b.name)}</strong></td>
+          <td><span class="badge badge-popular">${escapeHtml(b.agencyName || "Independent Broker")}</span></td>
+          <td>${escapeHtml(b.email)}</td>
+          <td>${escapeHtml(b.phone || "—")}</td>
+          <td><span class="badge ${b.emailVerified ? 'badge-verified' : 'badge-unavailable'}">${b.emailVerified ? 'Verified' : 'Pending OTP'}</span></td>
+          <td>${new Date(b.createdAt || Date.now()).toLocaleDateString()}</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderAdminUsers(list) {
+      const tbody = document.getElementById("adminUsersTable");
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;">No registered renters.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = list.map(u => `
+        <tr>
+          <td><strong>${escapeHtml(u.name)}</strong></td>
+          <td>${escapeHtml(u.email)}</td>
+          <td>${escapeHtml(u.phone || "—")}</td>
+          <td><span class="badge ${u.emailVerified ? 'badge-verified' : 'badge-unavailable'}">${u.emailVerified ? 'Verified' : 'Pending OTP'}</span></td>
+          <td>${new Date(u.createdAt || Date.now()).toLocaleDateString()}</td>
+        </tr>
+      `).join("");
+    }
+
+    function switchAdminTab(tab) {
+      document.querySelectorAll(".auth-tab").forEach(t => t.classList.remove("active"));
+      document.getElementById("tabProps").style.display = "none";
+      document.getElementById("tabDeals").style.display = "none";
+      document.getElementById("tabBrokers").style.display = "none";
+      document.getElementById("tabUsers").style.display = "none";
+
+      if (tab === "props") {
+        document.getElementById("tabPropsBtn").classList.add("active");
+        document.getElementById("tabProps").style.display = "block";
+      } else if (tab === "deals") {
+        document.getElementById("tabDealsBtn").classList.add("active");
+        document.getElementById("tabDeals").style.display = "block";
+      } else if (tab === "brokers") {
+        document.getElementById("tabBrokersBtn").classList.add("active");
+        document.getElementById("tabBrokers").style.display = "block";
+      } else {
+        document.getElementById("tabUsersBtn").classList.add("active");
+        document.getElementById("tabUsers").style.display = "block";
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      initAdminDashboard();
+    });
+  </script>
+</body>
+</html>

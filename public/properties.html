@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browse Rental Properties | Ghar Bazaar</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Sticky Navbar -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="/" class="brand">
+        <div class="brand-icon">🏠</div>
+        <div>Ghar<span>Bazaar</span></div>
+      </a>
+
+      <button class="mobile-toggle" aria-label="Toggle menu">☰</button>
+
+      <ul class="nav-menu">
+        <li><a href="/" class="nav-link">Home</a></li>
+        <li><a href="/properties" class="nav-link active">Properties</a></li>
+        <li><a href="/#how-it-works" class="nav-link">How It Works</a></li>
+        <li><a href="/#brokerage" class="nav-link">2% Brokerage</a></li>
+      </ul>
+
+      <div class="nav-auth-group" id="navAuth">
+        <!-- Injected by main.js -->
+      </div>
+    </div>
+  </header>
+
+  <main class="container" style="padding-top: 36px; padding-bottom: 60px;">
+    <!-- Top Filter Bar -->
+    <div style="background: white; border-radius: var(--radius-xl); padding: 24px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); margin-bottom: 30px;">
+      <h1 style="font-size: 24px; font-weight: 800; margin-bottom: 16px;">Search Rental Properties in Mumbai</h1>
+
+      <div style="display: grid; grid-template-columns: 2fr 1.2fr 1.2fr auto; gap: 12px; align-items: center;" id="searchBox">
+        <div class="search-field">
+          <label for="catalogSearch">Keyword / Area / Amenities</label>
+          <input type="text" id="catalogSearch" placeholder="Search Malad, Andheri, WiFi, AC...">
+        </div>
+
+        <div class="search-field">
+          <label for="catalogType">Accommodation Type</label>
+          <select id="catalogType">
+            <option value="">All Types</option>
+            <option value="private">Private Room</option>
+            <option value="pg">PG Room</option>
+            <option value="studio">Studio Apartment</option>
+            <option value="apartment">Full Apartment</option>
+          </select>
+        </div>
+
+        <div class="search-field">
+          <label for="catalogRent">Max Rent</label>
+          <select id="catalogRent">
+            <option value="">Any Rent</option>
+            <option value="10000">Up to ₹10,000</option>
+            <option value="15000">Up to ₹15,000</option>
+            <option value="20000">Up to ₹20,000</option>
+            <option value="30000">Up to ₹30,000</option>
+          </select>
+        </div>
+
+        <button class="btn btn-primary btn-lg" id="filterBtn" style="height: 100%;">
+          <span>Search</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Results Heading & Sort -->
+    <div class="section-head">
+      <div>
+        <h2 class="section-title" id="resultsCount">Available Properties</h2>
+        <p class="section-desc">Direct mediator connection with verified property brokers.</p>
+      </div>
+
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <select id="catalogSort" class="form-control" style="width: auto; padding: 8px 14px; font-weight: 600;">
+          <option value="featured">Featured First</option>
+          <option value="low">Price: Low to High</option>
+          <option value="high">Price: High to Low</option>
+          <option value="rating">Top Rated</option>
+          <option value="newest">Newest First</option>
+        </select>
+        <button class="btn btn-outline btn-sm" onclick="resetCatalogFilters()">Reset</button>
+      </div>
+    </div>
+
+    <!-- Properties Grid -->
+    <div class="property-grid" id="catalogGrid">
+      <!-- Rendered by JavaScript -->
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-box" id="catalogEmpty" style="display: none;">
+      <div class="empty-box-icon">🔍</div>
+      <h4>No listings match your search</h4>
+      <p>Try widening your search area or adjusting your maximum rent filter.</p>
+      <button class="btn btn-primary" onclick="resetCatalogFilters()">Clear Filters</button>
+    </div>
+  </main>
+
+  <script src="main.js"></script>
+  <script>
+    let properties = [];
+
+    async function loadCatalog() {
+      try {
+        properties = await api("/api/properties");
+        applyCatalogFilters();
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    function applyCatalogFilters() {
+      const q = (document.getElementById("catalogSearch")?.value || "").toLowerCase().trim();
+      const type = document.getElementById("catalogType")?.value || "";
+      const maxRent = Number(document.getElementById("catalogRent")?.value || 0);
+      const sort = document.getElementById("catalogSort")?.value || "featured";
+
+      let filtered = properties.filter(p => {
+        const matchesQ = !q ||
+          p.title.toLowerCase().includes(q) ||
+          p.location.toLowerCase().includes(q) ||
+          p.area.toLowerCase().includes(q) ||
+          (p.amenities || []).some(a => a.toLowerCase().includes(q));
+
+        const matchesType = !type || p.type === type;
+        const matchesRent = !maxRent || p.price <= maxRent;
+
+        return matchesQ && matchesType && matchesRent;
+      });
+
+      if (sort === "low") filtered.sort((a,b) => a.price - b.price);
+      else if (sort === "high") filtered.sort((a,b) => b.price - a.price);
+      else if (sort === "rating") filtered.sort((a,b) => (b.rating || 0) - (a.rating || 0));
+      else if (sort === "newest") filtered.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+      else filtered.sort((a,b) => Number(b.featured) - Number(a.featured) || (b.rating || 0) - (a.rating || 0));
+
+      renderCatalog(filtered);
+    }
+
+    function renderCatalog(list) {
+      const grid = document.getElementById("catalogGrid");
+      const empty = document.getElementById("catalogEmpty");
+      const countEl = document.getElementById("resultsCount");
+
+      countEl.textContent = `Showing ${list.length} Verified Rental Stays`;
+
+      if (list.length === 0) {
+        grid.innerHTML = "";
+        empty.style.display = "block";
+        return;
+      }
+
+      empty.style.display = "none";
+      grid.innerHTML = list.map(p => {
+        const fav = isFavorite(p.id);
+        const badgeClass = p.badge ? `badge-${p.badge.toLowerCase().replace(/[^a-z]/g, "")}` : "badge-verified";
+
+        return `
+          <article class="property-card">
+            <div class="card-img-wrap">
+              <img src="${p.image}" class="card-img" alt="${escapeHtml(p.title)}" loading="lazy">
+              <span class="badge ${badgeClass} card-badge">${escapeHtml(p.badge || "Verified")}</span>
+              <button class="card-fav-btn ${fav ? "active" : ""}" onclick="toggleFavorite('${p.id}')">
+                ${fav ? "♥" : "♡"}
+              </button>
+              <div class="card-type-tag">${typeLabel(p.type)}</div>
+            </div>
+
+            <div class="card-body">
+              <div class="card-price-row">
+                <div class="card-price">${money(p.price)} <small>/ mo</small></div>
+                <div class="card-rating"><span>★</span> ${p.rating || 4.8}</div>
+              </div>
+
+              <h3 class="card-title">${escapeHtml(p.title)}</h3>
+              <div class="card-location">📍 ${escapeHtml(p.location)}</div>
+
+              <div class="card-specs">
+                <span>🛏️ ${escapeHtml(p.beds || "1 Bed")}</span>
+                <span>🚿 ${escapeHtml(p.bath || "Private Bath")}</span>
+                <span>📐 ${escapeHtml(p.size || "200 sq.ft")}</span>
+              </div>
+
+              <div class="card-amenities">
+                ${(p.amenities || []).slice(0, 3).map(a => `<span>${escapeHtml(a)}</span>`).join("")}
+              </div>
+
+              <div class="card-footer">
+                <a href="/property.html?id=${p.id}" class="btn btn-outline btn-sm">View Details</a>
+                <a href="/property.html?id=${p.id}" class="btn btn-primary btn-sm">Request Visit</a>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function resetCatalogFilters() {
+      document.getElementById("catalogSearch").value = "";
+      document.getElementById("catalogType").value = "";
+      document.getElementById("catalogRent").value = "";
+      document.getElementById("catalogSort").value = "featured";
+      applyCatalogFilters();
+    }
+
+    document.getElementById("filterBtn")?.addEventListener("click", applyCatalogFilters);
+    document.getElementById("catalogSort")?.addEventListener("change", applyCatalogFilters);
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadCatalog();
+    });
+  </script>
+</body>
+</html>

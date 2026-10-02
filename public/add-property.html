@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>List Property | Ghar Bazaar</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Sticky Navbar -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="/" class="brand">
+        <div class="brand-icon">🏢</div>
+        <div>Ghar<span>Bazaar</span> <small style="font-size:12px;color:var(--muted);font-weight:600;margin-left:4px;">BROKER PORTAL</small></div>
+      </a>
+
+      <div class="nav-auth-group" id="navAuth">
+        <!-- Injected by main.js -->
+      </div>
+    </div>
+  </header>
+
+  <main class="container" style="padding-top: 36px; padding-bottom: 60px; max-width: 840px;">
+    <div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+      <a href="/broker-dashboard.html" class="btn btn-outline btn-sm">← Back to Broker Portal</a>
+      <span class="badge badge-popular">Verified Broker Portal</span>
+    </div>
+
+    <div style="background: white; border-radius: var(--radius-xl); padding: 36px; border: 1px solid var(--border); box-shadow: var(--shadow-md);">
+      <div style="margin-bottom: 24px;">
+        <h1 style="font-size: 26px; font-weight: 800;" id="formHeading">List New Property</h1>
+        <p style="color: var(--muted); font-size: 14px;">Fill in the property specifications. Image uploads are processed via Cloudinary.</p>
+      </div>
+
+      <form id="propertyForm" enctype="multipart/form-data">
+        <input type="hidden" id="editPropertyId">
+
+        <!-- Title & Type -->
+        <div class="form-group">
+          <label for="propTitle">Property Title *</label>
+          <input type="text" id="propTitle" class="form-control" placeholder="e.g. Furnished Private Room Near Metro" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="propType">Accommodation Type *</label>
+            <select id="propType" class="form-control" required>
+              <option value="private">Private Room</option>
+              <option value="pg">PG Accommodation</option>
+              <option value="studio">Studio Apartment</option>
+              <option value="apartment">Full Apartment (1BHK/2BHK)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="propBadge">Promotional Badge</label>
+            <select id="propBadge" class="form-control">
+              <option value="Verified">Verified</option>
+              <option value="Popular">Popular</option>
+              <option value="Luxury">Luxury</option>
+              <option value="New">New Listing</option>
+              <option value="Premium">Premium</option>
+              <option value="Student Pick">Student Pick</option>
+              <option value="Budget">Budget</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Location & Area -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="propLocation">Full Location / Landmark *</label>
+            <input type="text" id="propLocation" class="form-control" placeholder="e.g. Malad West, Link Road, Mumbai" required>
+          </div>
+
+          <div class="form-group">
+            <label for="propArea">Area Key (For Search & Filtering) *</label>
+            <input type="text" id="propArea" class="form-control" placeholder="e.g. malad, andheri, borivali, powai" required>
+          </div>
+        </div>
+
+        <!-- Rent & Deposit -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="propPrice">Monthly Rent (₹) *</label>
+            <input type="number" id="propPrice" class="form-control" placeholder="12000" min="1000" required>
+          </div>
+
+          <div class="form-group">
+            <label for="propDeposit">Security Deposit (₹)</label>
+            <input type="number" id="propDeposit" class="form-control" placeholder="24000" min="0">
+          </div>
+        </div>
+
+        <!-- Specs (Beds, Bath, Size) -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label for="propBeds">Bedrooms / Beds</label>
+            <input type="text" id="propBeds" class="form-control" placeholder="1 Bed" value="1 Bed">
+          </div>
+
+          <div class="form-group">
+            <label for="propBath">Bathroom</label>
+            <input type="text" id="propBath" class="form-control" placeholder="Private Bath" value="Private Bath">
+          </div>
+
+          <div class="form-group">
+            <label for="propSize">Carpet Area</label>
+            <input type="text" id="propSize" class="form-control" placeholder="220 sq.ft" value="200 sq.ft">
+          </div>
+        </div>
+
+        <!-- Image Upload (Cloudinary / File or URL) -->
+        <div style="background: var(--bg-main); border: 1px dashed var(--border); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 20px;">
+          <h4 style="font-size: 15px; font-weight: 700; margin-bottom: 8px;">Property Media (Cloudinary Upload)</h4>
+          <p style="font-size: 13px; color: var(--muted); margin-bottom: 14px;">
+            Upload a photo from your device (automatically uploaded to Cloudinary), or paste an image URL.
+          </p>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="propImageFile">Upload Image File (JPG, PNG, WEBP)</label>
+              <input type="file" id="propImageFile" class="form-control" accept="image/*">
+            </div>
+
+            <div class="form-group">
+              <label for="propImageUrl">Or Image URL</label>
+              <input type="url" id="propImageUrl" class="form-control" placeholder="https://images.unsplash.com/...">
+            </div>
+          </div>
+
+          <!-- Preview -->
+          <div id="imagePreviewContainer" style="display: none; margin-top: 10px;">
+            <div style="font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 6px;">Image Preview:</div>
+            <img id="imagePreview" src="" alt="Preview" style="max-height: 160px; border-radius: var(--radius-md); object-fit: cover;">
+          </div>
+        </div>
+
+        <!-- Amenities Checkboxes -->
+        <div class="form-group">
+          <label style="margin-bottom: 10px; display: block;">Amenities Included</label>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;" id="amenitiesCheckboxes">
+            <label style="font-size: 13.5px; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" value="WiFi" checked> WiFi
+            </label>
+            <label style="font-size: 13.5px; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" value="AC"> Air Conditioner
+            </label>
+            <label style="font-size: 13.5px; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" value="Attached Bath" checked> Attached Bath
+            </label>
+            <label style="font-size: 13.5px; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" value="Wardrobe" checked> Wardrobe
+            </label>
+            <label style="font-size: 13.5px; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" value="Power Backup"> Power Backup
+            </label>
+            <label style="font-size: 13.5px; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" value="Food Available"> Food Available
+            </label>
+            <label style="font-size: 13.5px; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" value="Parking"> Parking
+            </label>
+            <label style="font-size: 13.5px; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" value="Lift"> Lift / Elevator
+            </label>
+            <label style="font-size: 13.5px; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" value="Security" checked> 24/7 Security
+            </label>
+            <label style="font-size: 13.5px; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" value="Balcony"> Balcony
+            </label>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="form-group">
+          <label for="propDescription">Detailed Description</label>
+          <textarea id="propDescription" class="form-control" rows="4" placeholder="Describe the property highlights, nearby transport, quiet neighborhood, rules, etc..."></textarea>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 28px;">
+          <button type="submit" class="btn btn-primary btn-lg" id="savePropertyBtn" style="flex: 2;">
+            <span id="btnText">Publish Property Listing</span>
+          </button>
+          <a href="/broker-dashboard.html" class="btn btn-outline btn-lg" style="flex: 1;">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <script src="main.js"></script>
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const editId = urlParams.get("edit");
+
+    // Preview uploaded file
+    document.getElementById("propImageFile")?.addEventListener("change", function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          document.getElementById("imagePreview").src = evt.target.result;
+          document.getElementById("imagePreviewContainer").style.display = "block";
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    document.getElementById("propImageUrl")?.addEventListener("input", function(e) {
+      if (e.target.value.trim()) {
+        document.getElementById("imagePreview").src = e.target.value.trim();
+        document.getElementById("imagePreviewContainer").style.display = "block";
+      }
+    });
+
+    async function initAddPropertyPage() {
+      const user = await checkAuthStatus();
+      if (!user || (user.role !== "broker" && user.role !== "admin")) {
+        showToast("Broker access required.", "error");
+        setTimeout(() => window.location.href = "/broker-login.html", 800);
+        return;
+      }
+
+      if (editId) {
+        document.getElementById("formHeading").textContent = "Edit Property Listing";
+        document.getElementById("btnText").textContent = "Update Property Listing";
+        loadPropertyForEdit(editId);
+      }
+    }
+
+    async function loadPropertyForEdit(id) {
+      try {
+        const p = await api(`/api/properties/${id}`);
+        document.getElementById("editPropertyId").value = p.id;
+        document.getElementById("propTitle").value = p.title;
+        document.getElementById("propType").value = p.type;
+        document.getElementById("propBadge").value = p.badge || "Verified";
+        document.getElementById("propLocation").value = p.location;
+        document.getElementById("propArea").value = p.area;
+        document.getElementById("propPrice").value = p.price;
+        document.getElementById("propDeposit").value = p.deposit || 0;
+        document.getElementById("propBeds").value = p.beds || "1 Bed";
+        document.getElementById("propBath").value = p.bath || "Private Bath";
+        document.getElementById("propSize").value = p.size || "200 sq.ft";
+        document.getElementById("propImageUrl").value = p.image || "";
+        document.getElementById("propDescription").value = p.description || "";
+
+        if (p.image) {
+          document.getElementById("imagePreview").src = p.image;
+          document.getElementById("imagePreviewContainer").style.display = "block";
+        }
+
+        // Check amenities
+        document.querySelectorAll("#amenitiesCheckboxes input").forEach(cb => {
+          cb.checked = (p.amenities || []).includes(cb.value);
+        });
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    // Submit handler
+    document.getElementById("propertyForm")?.addEventListener("submit", async function(e) {
+      e.preventDefault();
+
+      const btn = document.getElementById("savePropertyBtn");
+      btn.disabled = true;
+      btn.innerHTML = "<span>Uploading & Saving to MongoDB...</span>";
+
+      try {
+        const formData = new FormData();
+        const fileInput = document.getElementById("propImageFile");
+        if (fileInput.files.length > 0) {
+          formData.append("imageFile", fileInput.files[0]);
+        }
+
+        formData.append("title", document.getElementById("propTitle").value.trim());
+        formData.append("type", document.getElementById("propType").value);
+        formData.append("badge", document.getElementById("propBadge").value);
+        formData.append("location", document.getElementById("propLocation").value.trim());
+        formData.append("area", document.getElementById("propArea").value.trim().toLowerCase());
+        formData.append("price", document.getElementById("propPrice").value);
+        formData.append("deposit", document.getElementById("propDeposit").value || 0);
+        formData.append("beds", document.getElementById("propBeds").value.trim());
+        formData.append("bath", document.getElementById("propBath").value.trim());
+        formData.append("size", document.getElementById("propSize").value.trim());
+        formData.append("image", document.getElementById("propImageUrl").value.trim());
+        formData.append("description", document.getElementById("propDescription").value.trim());
+
+        const selectedAmenities = [];
+        document.querySelectorAll("#amenitiesCheckboxes input:checked").forEach(cb => {
+          selectedAmenities.push(cb.value);
+        });
+        formData.append("amenities", selectedAmenities.join(","));
+
+        let res;
+        if (editId) {
+          res = await fetch(`/api/properties/${editId}`, {
+            method: "PUT",
+            body: formData
+          });
+        } else {
+          res = await fetch("/api/properties", {
+            method: "POST",
+            body: formData
+          });
+        }
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "Failed to save property");
+
+        showToast(data.message || "Property listing published successfully!", "success");
+        setTimeout(() => {
+          window.location.href = "/broker-dashboard.html";
+        }, 1000);
+      } catch (err) {
+        showToast(err.message, "error");
+        btn.disabled = false;
+        btn.innerHTML = `<span>${editId ? 'Update Property Listing' : 'Publish Property Listing'}</span>`;
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      initAddPropertyPage();
+    });
+  </script>
+</body>
+</html>

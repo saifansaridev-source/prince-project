@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Property Details | Ghar Bazaar</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Sticky Navbar -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="/" class="brand">
+        <div class="brand-icon">🏠</div>
+        <div>Ghar<span>Bazaar</span></div>
+      </a>
+
+      <div class="nav-auth-group" id="navAuth">
+        <a href="/login.html" class="btn btn-outline btn-sm">Login</a>
+        <a href="/signup.html" class="btn btn-primary btn-sm">Sign Up</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container" style="padding-top: 36px; padding-bottom: 60px;">
+    <div style="margin-bottom: 20px;">
+      <a href="/" class="btn btn-outline btn-sm">← Back to All Listings</a>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1.8fr 1fr; gap: 32px; align-items: flex-start;" id="propertyLayout">
+      <!-- Main Content -->
+      <div>
+        <div style="border-radius: var(--radius-xl); overflow: hidden; background: #e2e8f0; height: 420px; margin-bottom: 24px; box-shadow: var(--shadow-md);">
+          <img id="propImage" src="" alt="Property" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <span class="badge badge-verified" id="propBadge">Verified</span>
+            <span class="badge" id="propType" style="background: #e2e8f0; color: #334155; margin-left: 6px;"></span>
+            <h1 id="propTitle" style="font-size: 26px; font-weight: 800; margin-top: 10px;">Loading Property...</h1>
+            <p id="propLocation" style="color: var(--muted); font-size: 15px; margin-top: 4px;">📍 Mumbai</p>
+          </div>
+
+          <div style="text-align: right;">
+            <div style="font-size: 28px; font-weight: 800; color: var(--primary);">
+              <span id="propPrice">₹0</span> <small style="font-size: 15px; font-weight: 500; color: var(--muted);">/ month</small>
+            </div>
+            <div style="font-size: 13px; color: var(--muted); margin-top: 2px;">
+              Security Deposit: <strong id="propDeposit" style="color: var(--dark);">₹0</strong>
+            </div>
+            <div id="propAvailability" class="badge badge-available" style="margin-top: 8px;">Available</div>
+          </div>
+        </div>
+
+        <!-- Specifications -->
+        <div class="card-specs" style="padding: 16px 0; font-size: 14px; margin-bottom: 24px;">
+          <span>🛏️ Bedrooms: <strong id="propBeds">1 Bed</strong></span>
+          <span>🚿 Bathroom: <strong id="propBath">Private Bath</strong></span>
+          <span>📐 Carpet Area: <strong id="propSize">200 sq.ft</strong></span>
+          <span>⭐ Rating: <strong id="propRating">4.8 / 5</strong></span>
+        </div>
+
+        <!-- Description -->
+        <div style="background: white; border-radius: var(--radius-lg); padding: 24px; border: 1px solid var(--border); margin-bottom: 24px; box-shadow: var(--shadow-sm);">
+          <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 12px;">About the Accommodation</h3>
+          <p id="propDescription" style="color: #475569; font-size: 15px; line-height: 1.7;"></p>
+        </div>
+
+        <!-- Amenities -->
+        <div style="background: white; border-radius: var(--radius-lg); padding: 24px; border: 1px solid var(--border); margin-bottom: 24px; box-shadow: var(--shadow-sm);">
+          <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 16px;">Included Amenities & Facilities</h3>
+          <div id="propAmenities" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
+        </div>
+      </div>
+
+      <!-- Sidebar Form & Broker Card -->
+      <div>
+        <!-- Broker Card -->
+        <div style="background: white; border-radius: var(--radius-lg); padding: 24px; border: 1px solid var(--border); margin-bottom: 24px; box-shadow: var(--shadow-md);">
+          <span class="badge badge-popular" style="margin-bottom: 10px;">LISTED BY VERIFIED BROKER</span>
+          <h3 id="brokerName" style="font-size: 18px; font-weight: 800; margin-bottom: 4px;">Broker Name</h3>
+          <div id="brokerAgency" style="font-size: 14px; color: var(--primary); font-weight: 600; margin-bottom: 14px;">Agency Name</div>
+          
+          <div style="font-size: 14px; color: #475569; display: flex; flex-direction: column; gap: 8px;">
+            <div>📞 <strong>Phone:</strong> <span id="brokerPhone">+91 ...</span></div>
+            <div>✉️ <strong>Email:</strong> <span id="brokerEmail">broker@gharbazaar.com</span></div>
+          </div>
+        </div>
+
+        <!-- Booking / Visit Request Card -->
+        <div style="background: white; border-radius: var(--radius-lg); padding: 24px; border: 1px solid var(--border); box-shadow: var(--shadow-md);">
+          <h3 style="font-size: 18px; font-weight: 800; margin-bottom: 6px;">Request Visit or Booking</h3>
+          <p style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">
+            Send an instant request to the broker. No advance charges required.
+          </p>
+
+          <form id="detailsBookingForm">
+            <div class="form-group">
+              <label for="detailRequestType">Select Request Type</label>
+              <select id="detailRequestType" class="form-control" required>
+                <option value="visit">Schedule In-Person Visit</option>
+                <option value="booking">Request Room Booking</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="detailPreferredDate">Preferred Date & Time</label>
+              <input type="text" id="detailPreferredDate" class="form-control" placeholder="e.g. Saturday 11:00 AM" required>
+            </div>
+
+            <div class="form-group">
+              <label for="detailUserPhone">Your Phone Number</label>
+              <input type="tel" id="detailUserPhone" class="form-control" placeholder="+91 98765 43210" required>
+            </div>
+
+            <div class="form-group">
+              <label for="detailUserMessage">Message for Broker</label>
+              <textarea id="detailUserMessage" class="form-control" rows="3" placeholder="Tell the broker when you want to move in or any specific questions..."></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block btn-lg" id="detailSubmitBtn">
+              <span>Send Request to Broker →</span>
+            </button>
+          </form>
+
+          <div style="margin-top: 16px; padding: 12px; background: var(--bg-main); border-radius: var(--radius-sm); font-size: 12px; color: var(--muted);">
+            ℹ️ Ghar Bazaar records a standard 2% brokerage mediation fee only upon successfully finalized rental agreements.
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="main.js"></script>
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const propertyId = urlParams.get("id");
+
+    async function loadPropertyDetails() {
+      if (!propertyId) {
+        showToast("No property specified.", "error");
+        setTimeout(() => window.location.href = "/", 1000);
+        return;
+      }
+
+      try {
+        const p = await api(`/api/properties/${propertyId}`);
+        document.title = `${p.title} | Ghar Bazaar`;
+
+        document.getElementById("propTitle").textContent = p.title;
+        document.getElementById("propImage").src = p.image;
+        document.getElementById("propBadge").textContent = p.badge || "Verified";
+        document.getElementById("propType").textContent = typeLabel(p.type);
+        document.getElementById("propPrice").textContent = money(p.price);
+        document.getElementById("propDeposit").textContent = money(p.deposit || p.price * 2);
+        document.getElementById("propLocation").textContent = `📍 ${p.location}`;
+        document.getElementById("propBeds").textContent = p.beds || "1 Bed";
+        document.getElementById("propBath").textContent = p.bath || "Private Bath";
+        document.getElementById("propSize").textContent = p.size || "200 sq.ft";
+        document.getElementById("propRating").textContent = `${p.rating || 4.8} / 5.0`;
+        document.getElementById("propDescription").textContent = p.description || "Spacious, well-ventilated accommodation.";
+        
+        const avail = document.getElementById("propAvailability");
+        avail.textContent = p.availability ? p.availability.toUpperCase() : "AVAILABLE";
+        avail.className = `badge badge-${p.availability === "booked" ? "booked" : p.availability === "unavailable" ? "unavailable" : "available"}`;
+
+        document.getElementById("propAmenities").innerHTML = (p.amenities || []).map(a => 
+          `<span class="badge" style="background:#e2e8f0;color:#334155;padding:6px 12px;font-size:12px;">✓ ${escapeHtml(a)}</span>`
+        ).join("");
+
+        document.getElementById("brokerName").textContent = p.brokerName || "Verified Broker";
+        document.getElementById("brokerAgency").textContent = p.agencyName || "Ghar Bazaar Verified Agency";
+        document.getElementById("brokerPhone").textContent = p.brokerPhone || "+91 98201 12345";
+        document.getElementById("brokerEmail").textContent = p.brokerEmail || "broker@gharbazaar.com";
+
+        if (currentUser && currentUser.phone) {
+          document.getElementById("detailUserPhone").value = currentUser.phone;
+        }
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    document.getElementById("detailsBookingForm")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!currentUser) {
+        showToast("Please log in to submit a request.", "warning");
+        setTimeout(() => window.location.href = "/login.html", 1000);
+        return;
+      }
+
+      const btn = document.getElementById("detailSubmitBtn");
+      btn.disabled = true;
+      btn.innerHTML = "<span>Submitting...</span>";
+
+      try {
+        const payload = {
+          propertyId,
+          requestType: document.getElementById("detailRequestType").value,
+          requestedDate: document.getElementById("detailPreferredDate").value,
+          userPhone: document.getElementById("detailUserPhone").value,
+          message: document.getElementById("detailUserMessage").value
+        };
+
+        const res = await api("/api/bookings", {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+
+        showToast(res.message || "Request sent to the broker!", "success");
+        document.getElementById("detailsBookingForm").reset();
+      } catch (err) {
+        showToast(err.message || "Failed to submit request.", "error");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = "<span>Send Request to Broker →</span>";
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadPropertyDetails();
+    });
+  </script>
+</body>
+</html>
